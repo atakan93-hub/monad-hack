@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,8 +63,12 @@ export default function ArenaPage() {
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
 
   // wagmi write hooks
-  const { write: voteOnChain } = useVoteForTopic();
-  const { write: proposeOnChain, isPending: isProposing } = useProposeTopic();
+  const voteHook = useVoteForTopic();
+  const proposeHook = useProposeTopic();
+
+  // Track which topic/round is being voted/proposed for Supabase sync
+  const pendingVoteTopicId = useRef<string | null>(null);
+  const pendingProposeData = useRef<{ title: string; description: string } | null>(null);
 
   // Topic proposal form
   const [newTitle, setNewTitle] = useState("");
@@ -118,36 +122,80 @@ export default function ArenaPage() {
 
   const handleVote = async (topicId: string) => {
     if (isOnChain && isConnected) {
-      voteOnChain(BigInt(topicId.replace("topic-", "")));
-    }
-    await voteForTopic(topicId, 100);
-    if (selectedRound) {
-      const t = await getTopicsByRound(selectedRound.id);
-      setTopics(t);
+      // Store pending vote for Supabase sync after tx confirmation
+      pendingVoteTopicId.current = topicId;
+      voteHook.write(BigInt(topicId.replace("topic-", "")));
+    } else {
+      // Off-chain only: update Supabase directly
+      await voteForTopic(topicId, 100);
+      if (selectedRound) {
+        const t = await getTopicsByRound(selectedRound.id);
+        setTopics(t);
+      }
     }
   };
+
+  // Sync Supabase after on-chain vote confirmation
+  useEffect(() => {
+    if (!voteHook.isSuccess || !pendingVoteTopicId.current) return;
+    const topicId = pendingVoteTopicId.current;
+    pendingVoteTopicId.current = null;
+
+    (async () => {
+      await voteForTopic(topicId, 100);
+      if (selectedRound) {
+        const t = await getTopicsByRound(selectedRound.id);
+        setTopics(t);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voteHook.isSuccess]);
 
   const handleProposeTopic = async () => {
     if (!selectedRound || !newTitle.trim()) return;
     if (isOnChain && isConnected) {
-      proposeOnChain(
+      pendingProposeData.current = { title: newTitle.trim(), description: newDescription.trim() };
+      proposeHook.write(
         BigInt(selectedRound.id.replace("round-", "")),
         newTitle.trim(),
         newDescription.trim(),
       );
+      setNewTitle("");
+      setNewDescription("");
+    } else {
+      await proposeTopic({
+        roundId: selectedRound.id,
+        proposerId: "user-1",
+        title: newTitle.trim(),
+        description: newDescription.trim(),
+      });
+      setNewTitle("");
+      setNewDescription("");
+      const t = await getTopicsByRound(selectedRound.id);
+      setTopics(t);
+      await loadRounds();
     }
-    await proposeTopic({
-      roundId: selectedRound.id,
-      proposerId: "user-1",
-      title: newTitle.trim(),
-      description: newDescription.trim(),
-    });
-    setNewTitle("");
-    setNewDescription("");
-    const t = await getTopicsByRound(selectedRound.id);
-    setTopics(t);
-    await loadRounds();
   };
+
+  // Sync Supabase after on-chain propose confirmation
+  useEffect(() => {
+    if (!proposeHook.isSuccess || !selectedRound || !pendingProposeData.current) return;
+    const data = pendingProposeData.current;
+    pendingProposeData.current = null;
+
+    (async () => {
+      await proposeTopic({
+        roundId: selectedRound.id,
+        proposerId: "user-1",
+        title: data.title,
+        description: data.description,
+      });
+      const t = await getTopicsByRound(selectedRound.id);
+      setTopics(t);
+      await loadRounds();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposeHook.isSuccess]);
 
   const selectedTopic = topics.find(
     (t) => t.id === selectedRound?.selectedTopicId
@@ -251,9 +299,9 @@ export default function ArenaPage() {
                     <Button
                       size="sm"
                       onClick={handleProposeTopic}
-                      disabled={!newTitle.trim() || isProposing}
+                      disabled={!newTitle.trim() || proposeHook.isPending || proposeHook.isConfirming}
                     >
-                      {isProposing ? "Submitting..." : "Submit Topic"}
+                      {proposeHook.isPending ? "Sign tx..." : proposeHook.isConfirming ? "Confirming..." : "Submit Topic"}
                     </Button>
                   </div>
                 </div>
@@ -273,6 +321,8 @@ export default function ArenaPage() {
                           topicId={topic.id}
                           currentVotes={topic.totalVotes}
                           onVote={handleVote}
+                          isPending={voteHook.isPending}
+                          isConfirming={voteHook.isConfirming}
                         />
                       </TopicCard>
                     ))}

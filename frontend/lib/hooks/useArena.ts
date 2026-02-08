@@ -54,13 +54,16 @@ export function useProposeTopic() {
 }
 
 export function useVoteForTopic() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { writeContract, writeContractAsync, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const write = (topicId: bigint) =>
     writeContract({ ...arenaConfig, functionName: "voteForTopic", args: [topicId] });
 
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  const writeAsync = (topicId: bigint) =>
+    writeContractAsync({ ...arenaConfig, functionName: "voteForTopic", args: [topicId] });
+
+  return { write, writeAsync, hash, isPending, isConfirming, isSuccess, error };
 }
 
 export function useSubmitEntry() {
