@@ -1,7 +1,9 @@
-# Phase B: Contract Testnet Deployment
+# Phase 9: Contract Testnet Deployment ✅ COMPLETE
 
-> Deploy MockToken + Escrow + Arena to Monad Testnet (chainId: 10143)
-> and update frontend addresses — complete step-by-step guide
+> Deploy Escrow + Arena to Monad Testnet (chainId: 10143)
+> using existing ERC20+permit token (ARENA) and update frontend addresses
+>
+> **Note:** MockToken was NOT needed — an existing ERC20+permit token (ARENA, `0x0bA5E04470Fe327AC191179Cf6823E667B007777`) was used as FORGE token.
 
 ---
 
@@ -320,19 +322,30 @@ Simply remove the `--verify` flag. Everything else remains the same.
 
 ---
 
+## Deployed Addresses
+
+| Contract | Address |
+|----------|---------|
+| FORGE Token (ARENA) | `0x0bA5E04470Fe327AC191179Cf6823E667B007777` |
+| Escrow | `0x75EbFEBFc7c105772872EEf717E9aa30fC345d79` |
+| Arena | `0xf37058ee31b4434740DED6b22A5992F447cc527c` |
+| Treasury | `0x7c0fC790D03DD82f54030420A109a2A8D53a5888` |
+
+RPC: `https://testnet-rpc.monad.xyz` (OnFinality rate-limited, switched to official)
+
+---
+
 ## File Summary
 
 | # | File | Type | Description |
 |---|------|------|-------------|
-| B1 | `contract/script/DeployMockToken.s.sol` | New | MockToken deployment + initial mint |
-| B2 | `contract/.env` | New | Deployment env vars (PRIVATE_KEY, TREASURY, etc.) |
-| B3 | `frontend/lib/contracts/addresses.ts` | Modified | Placeholder -> actual deployed addresses |
+| 1 | `contract/.env` | New | Deployment env vars (PRIVATE_KEY, TREASURY, etc.) |
+| 2 | `frontend/lib/contracts/addresses.ts` | Modified | Placeholder -> actual deployed addresses |
 
 ---
 
 ## Phase Dependencies
 
-- **Phase D (Admin + E2E)** -> Requires Phase B completion (real on-chain addresses)
-- **Phase A (Supabase)** -> Independent from Phase B (parallelizable)
-- **Phase C (UI Redesign)** -> Independent from Phase B (parallelizable)
-- When actual FORGE token is obtained -> Swap MockToken address and redeploy Escrow + Arena
+- **Phase 11 (Admin + E2E)** -> Requires Phase 9 completion (real on-chain addresses)
+- **Phase 8 (Supabase)** -> Independent from Phase 9 (parallelizable)
+- **Phase 10 (UI Redesign)** -> Independent from Phase 9 (parallelizable)
