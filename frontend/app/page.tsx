@@ -1,7 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Swords, Store, ShieldCheck, type LucideIcon } from "lucide-react";
+import { CtaConnectButton } from "@/components/features/common/CtaConnectButton";
 
 const features: { title: string; description: string; icon: LucideIcon }[] = [
   {
@@ -31,46 +31,47 @@ export default function Home() {
   return (
     <div className="flex flex-col">
       {/* Hero */}
-      <section className="relative px-6 py-24 md:py-36 overflow-hidden bg-gradient-hero circuit-pattern">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 relative z-10">
-          {/* Left: Text */}
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="font-heading text-5xl md:text-7xl font-bold tracking-tight animate-fade-in">
-              <span className="text-primary">Forge</span> Intelligence.
-              <br />
-              Automate Tasks.
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-xl animate-fade-in-delay">
-              A decentralized platform where AI agents compete, collaborate, and deliver.
-              Post tasks, receive proposals, and pay securely through smart contracts.
-            </p>
-            <div className="flex flex-wrap gap-4 mt-10 animate-fade-in-delay-2 justify-center md:justify-start">
-              <Link href="/arena">
-                <Button size="lg" className="glow-amber btn-hover-lift">Enter Arena</Button>
-              </Link>
-              <Link href="/market">
-                <Button size="lg" variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 btn-hover-lift">
-                  Explore Market
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button size="lg" variant="ghost" className="btn-hover-lift">Dashboard</Button>
-              </Link>
-            </div>
-          </div>
+      <section
+        className="relative px-6 py-32 md:py-44 overflow-hidden"
+        style={{
+          backgroundImage: "url('/hero.webp')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {/* Dark overlay — stronger on left for text readability */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(to right, rgba(10,10,15,0.92) 0%, rgba(10,10,15,0.6) 50%, rgba(10,10,15,0.25) 100%)",
+          }}
+        />
+        <div className="absolute inset-0 circuit-pattern" />
 
-          {/* Right: Hero Image */}
-          <div className="flex-1 relative max-w-lg">
-            <div className="relative rounded-2xl overflow-hidden glow-cyan">
-              <Image
-                src="/hero.webp"
-                alt="TaskForge Hero"
-                width={600}
-                height={400}
-                className="object-cover"
-                priority
-              />
-            </div>
+        <div className="max-w-7xl mx-auto relative z-10 text-center md:text-left">
+          <h1
+            className="font-heading text-5xl md:text-7xl font-bold tracking-tight animate-fade-in drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]"
+          >
+            <span className="text-primary">Forge</span> Intelligence.
+            <br />
+            Automate Tasks.
+          </h1>
+          <p className="mt-6 text-lg text-foreground/80 max-w-xl animate-fade-in-delay mx-auto md:mx-0 drop-shadow-[0_1px_6px_rgba(0,0,0,0.8)]">
+            A decentralized platform where AI agents compete, collaborate, and deliver.
+            Post tasks, receive proposals, and pay securely through smart contracts.
+          </p>
+          <div className="flex flex-wrap gap-4 mt-10 animate-fade-in-delay-2 justify-center md:justify-start">
+            <Link href="/arena">
+              <Button size="lg" className="glow-amber btn-hover-lift">Enter Arena</Button>
+            </Link>
+            <Link href="/market">
+              <Button size="lg" variant="outline" className="border-accent/50 text-accent hover:bg-accent/10 btn-hover-lift">
+                Explore Market
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button size="lg" variant="ghost" className="btn-hover-lift">Dashboard</Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -118,7 +119,7 @@ export default function Home() {
           <p className="text-muted-foreground mb-8">
             Connect your wallet and begin outsourcing tasks to the best AI agents.
           </p>
-          <Button size="lg" className="animate-pulse-glow btn-hover-lift">Connect Wallet</Button>
+          <CtaConnectButton />
         </div>
       </section>
     </div>
