@@ -16,35 +16,7 @@ export interface Database {
           name: string;
           role: "requester" | "agent" | "both";
           avatar_url: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          address: string;
-          name: string;
-          role: "requester" | "agent" | "both";
-          avatar_url?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          address?: string;
-          name?: string;
-          role?: "requester" | "agent" | "both";
-          avatar_url?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      agents: {
-        Row: {
-          id: string;
-          name: string;
           description: string;
-          avatar_url: string | null;
-          owner_id: string;
           reputation: number;
           completion_rate: number;
           total_tasks: number;
@@ -55,10 +27,11 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          address: string;
           name: string;
-          description: string;
+          role: "requester" | "agent" | "both";
           avatar_url?: string | null;
-          owner_id: string;
+          description?: string;
           reputation?: number;
           completion_rate?: number;
           total_tasks?: number;
@@ -69,10 +42,11 @@ export interface Database {
         };
         Update: {
           id?: string;
+          address?: string;
           name?: string;
-          description?: string;
+          role?: "requester" | "agent" | "both";
           avatar_url?: string | null;
-          owner_id?: string;
+          description?: string;
           reputation?: number;
           completion_rate?: number;
           total_tasks?: number;
@@ -85,7 +59,7 @@ export interface Database {
       sbt_badges: {
         Row: {
           id: string;
-          agent_id: string;
+          user_id: string;
           name: string;
           tier: "bronze" | "silver" | "gold";
           issued_at: string;
@@ -94,7 +68,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          agent_id: string;
+          user_id: string;
           name: string;
           tier: "bronze" | "silver" | "gold";
           issued_at?: string;
@@ -103,7 +77,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          agent_id?: string;
+          user_id?: string;
           name?: string;
           tier?: "bronze" | "silver" | "gold";
           issued_at?: string;
@@ -121,7 +95,7 @@ export interface Database {
           deadline: string;
           status: "open" | "in_progress" | "completed" | "cancelled" | "disputed";
           requester_id: string;
-          assigned_agent_id: string | null;
+          assigned_user_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -134,7 +108,7 @@ export interface Database {
           deadline: string;
           status?: "open" | "in_progress" | "completed" | "cancelled" | "disputed";
           requester_id: string;
-          assigned_agent_id?: string | null;
+          assigned_user_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -147,7 +121,7 @@ export interface Database {
           deadline?: string;
           status?: "open" | "in_progress" | "completed" | "cancelled" | "disputed";
           requester_id?: string;
-          assigned_agent_id?: string | null;
+          assigned_user_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -156,7 +130,7 @@ export interface Database {
         Row: {
           id: string;
           request_id: string;
-          agent_id: string;
+          user_id: string;
           price: number;
           estimated_days: number;
           message: string;
@@ -167,7 +141,7 @@ export interface Database {
         Insert: {
           id?: string;
           request_id: string;
-          agent_id: string;
+          user_id: string;
           price: number;
           estimated_days: number;
           message: string;
@@ -178,7 +152,7 @@ export interface Database {
         Update: {
           id?: string;
           request_id?: string;
-          agent_id?: string;
+          user_id?: string;
           price?: number;
           estimated_days?: number;
           message?: string;
@@ -255,7 +229,7 @@ export interface Database {
         Row: {
           id: string;
           round_id: string;
-          agent_id: string;
+          user_id: string;
           repo_url: string;
           description: string;
           demo_url: string | null;
@@ -265,7 +239,7 @@ export interface Database {
         Insert: {
           id?: string;
           round_id: string;
-          agent_id: string;
+          user_id: string;
           repo_url: string;
           description: string;
           demo_url?: string | null;
@@ -275,7 +249,7 @@ export interface Database {
         Update: {
           id?: string;
           round_id?: string;
-          agent_id?: string;
+          user_id?: string;
           repo_url?: string;
           description?: string;
           demo_url?: string | null;
@@ -288,7 +262,7 @@ export interface Database {
           id: string;
           request_id: string;
           requester_id: string;
-          agent_id: string;
+          user_id: string;
           amount: number;
           status: "created" | "funded" | "completed" | "disputed" | "refunded";
           created_at: string;
@@ -299,7 +273,7 @@ export interface Database {
           id?: string;
           request_id: string;
           requester_id: string;
-          agent_id: string;
+          user_id: string;
           amount: number;
           status?: "created" | "funded" | "completed" | "disputed" | "refunded";
           created_at?: string;
@@ -310,7 +284,7 @@ export interface Database {
           id?: string;
           request_id?: string;
           requester_id?: string;
-          agent_id?: string;
+          user_id?: string;
           amount?: number;
           status?: "created" | "funded" | "completed" | "disputed" | "refunded";
           created_at?: string;

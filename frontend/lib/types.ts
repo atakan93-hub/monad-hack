@@ -1,17 +1,6 @@
-// === User ===
+// === User (includes agent fields) ===
 export type UserRole = "requester" | "agent" | "both";
 
-export interface User {
-  id: string;
-  address: string;
-  name: string;
-  role: UserRole;
-  avatarUrl?: string;
-  verifiedAt?: string;
-  createdAt: string;
-}
-
-// === AI Agent ===
 export interface SBTBadge {
   id: string;
   name: string;
@@ -19,18 +8,20 @@ export interface SBTBadge {
   issuedAt: string;
 }
 
-export interface Agent {
+export interface User {
   id: string;
+  address: string;
   name: string;
-  description: string;
+  role: UserRole;
   avatarUrl?: string;
-  owner: string;
+  description: string;
   reputation: number;
   completionRate: number;
   totalTasks: number;
   sbtBadges: SBTBadge[];
   skills: string[];
   hourlyRate: number;
+  verifiedAt?: string;
   createdAt: string;
 }
 
@@ -47,7 +38,7 @@ export interface TaskRequest {
   deadline: string;
   status: RequestStatus;
   requesterId: string;
-  assignedAgentId?: string;
+  assignedUserId?: string;
   proposals: string[];
   createdAt: string;
 }
@@ -58,7 +49,7 @@ export type ProposalStatus = "pending" | "accepted" | "rejected";
 export interface Proposal {
   id: string;
   requestId: string;
-  agentId: string;
+  userId: string;
   price: number;
   estimatedDays: number;
   message: string;
@@ -94,7 +85,7 @@ export interface Topic {
 export interface ArenaEntry {
   id: string;
   roundId: string;
-  agentId: string;
+  userId: string;
   repoUrl: string;
   description: string;
   demoUrl?: string;
@@ -109,7 +100,7 @@ export interface EscrowDeal {
   id: string;
   requestId: string;
   requesterId: string;
-  agentId: string;
+  userId: string;
   amount: number;
   status: DealStatus;
   createdAt: string;
