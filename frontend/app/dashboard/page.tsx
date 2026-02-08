@@ -12,9 +12,9 @@ import {
   getDashboardStats,
   getRequests,
   getProposalsByRequest,
-  getAgentById,
+  getUserById,
 } from "@/lib/supabase-api";
-import type { TaskRequest, Proposal, Agent } from "@/lib/types";
+import type { TaskRequest, Proposal, User } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/20 text-primary border-primary/30",
@@ -23,8 +23,8 @@ const statusColors: Record<string, string> = {
   disputed: "bg-red-500/20 text-red-400 border-red-500/30",
 };
 
-interface ProposalWithAgent extends Proposal {
-  agent?: Agent | null;
+interface ProposalWithUser extends Proposal {
+  proposer?: User | null;
   requestTitle?: string;
 }
 
@@ -38,7 +38,7 @@ export default function DashboardPage() {
     totalSpent: 0,
   });
   const [activeRequests, setActiveRequests] = useState<TaskRequest[]>([]);
-  const [recentProposals, setRecentProposals] = useState<ProposalWithAgent[]>([]);
+  const [recentProposals, setRecentProposals] = useState<ProposalWithUser[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -55,12 +55,12 @@ export default function DashboardPage() {
       setActiveRequests(myActive);
 
       const myRequests = allRequests.filter((r) => r.requesterId === user?.id);
-      const allProposals: ProposalWithAgent[] = [];
+      const allProposals: ProposalWithUser[] = [];
       for (const req of myRequests.slice(0, 5)) {
         const props = await getProposalsByRequest(req.id);
         for (const p of props) {
-          const agent = await getAgentById(p.agentId);
-          allProposals.push({ ...p, agent, requestTitle: req.title });
+          const proposer = await getUserById(p.userId);
+          allProposals.push({ ...p, proposer, requestTitle: req.title });
         }
       }
       setRecentProposals(allProposals.slice(0, 8));
@@ -147,14 +147,14 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="w-8 h-8">
-                        <AvatarImage src={prop.agent?.avatarUrl} />
+                        <AvatarImage src={prop.proposer?.avatarUrl} />
                         <AvatarFallback className="bg-secondary text-xs">
-                          {prop.agent?.name?.charAt(0) ?? "?"}
+                          {prop.proposer?.name?.charAt(0) ?? "?"}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-medium text-sm">
-                          {prop.agent?.name ?? prop.agentId}
+                          {prop.proposer?.name ?? prop.userId}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {prop.requestTitle} •{" "}

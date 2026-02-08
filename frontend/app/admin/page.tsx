@@ -8,7 +8,7 @@ import { useCreateRound, useAdvanceRound, useSelectWinner } from "@/lib/hooks/us
 import {
   getRounds,
   getEntriesByRound,
-  getAgentById,
+  getUserById,
 } from "@/lib/supabase-api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
-import type { Round, ArenaEntry, Agent } from "@/lib/types";
+import type { Round, ArenaEntry, User } from "@/lib/types";
 
 // ─── Constants ────────────────────────────────────────
 const STATUS_LABELS: Record<string, string> = {
@@ -64,7 +64,7 @@ export default function AdminPage() {
 
   // Winner selector state
   const [winnerRound, setWinnerRound] = useState<Round | null>(null);
-  const [entries, setEntries] = useState<(ArenaEntry & { agent?: Agent })[]>([]);
+  const [entries, setEntries] = useState<(ArenaEntry & { user?: User })[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
 
   // ─── Contract hooks ─────────────────────────────────
@@ -197,8 +197,8 @@ export default function AdminPage() {
 
     const enriched = await Promise.all(
       entryList.map(async (entry) => {
-        const agent = await getAgentById(entry.agentId);
-        return { ...entry, agent: agent ?? undefined };
+        const u = await getUserById(entry.userId);
+        return { ...entry, user: u ?? undefined };
       })
     );
 
@@ -206,19 +206,19 @@ export default function AdminPage() {
     setIsLoadingEntries(false);
   }
 
-  function handleSelectWinner(entry: ArenaEntry & { agent?: Agent }) {
-    if (!winnerRound || !entry.agent) return;
-    setSelectedWinnerAgentId(entry.agentId);
+  function handleSelectWinner(entry: ArenaEntry & { user?: User }) {
+    if (!winnerRound || !entry.user) return;
+    setSelectedWinnerUserId(entry.userId);
     selectWinner.write(
       BigInt(winnerRound.roundNumber),
-      entry.agent.owner as `0x${string}`
+      entry.user.address as `0x${string}`
     );
   }
 
-  const [selectedWinnerAgentId, setSelectedWinnerAgentId] = useState<string | null>(null);
+  const [selectedWinnerUserId, setSelectedWinnerUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!selectWinner.isSuccess || !winnerRound || !selectedWinnerAgentId) return;
+    if (!selectWinner.isSuccess || !winnerRound || !selectedWinnerUserId) return;
 
     (async () => {
       await fetch("/api/arena/sync", {
@@ -227,11 +227,11 @@ export default function AdminPage() {
         body: JSON.stringify({
           action: "selectWinner",
           roundId: winnerRound.id,
-          winnerId: selectedWinnerAgentId,
+          winnerId: selectedWinnerUserId,
         }),
       });
 
-      setSelectedWinnerAgentId(null);
+      setSelectedWinnerUserId(null);
       setWinnerRound(null);
       setEntries([]);
       loadRounds();
@@ -462,7 +462,7 @@ export default function AdminPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm">
-                      {entry.agent?.name ?? "Unknown Agent"}
+                      {entry.user?.name ?? "Unknown User"}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                       {entry.description}
@@ -477,16 +477,16 @@ export default function AdminPage() {
                         {entry.repoUrl}
                       </a>
                     )}
-                    {entry.agent?.owner && (
+                    {entry.user?.address && (
                       <p className="text-xs text-muted-foreground font-mono mt-1">
-                        Owner: {entry.agent.owner.slice(0, 6)}...{entry.agent.owner.slice(-4)}
+                        Address: {entry.user.address.slice(0, 6)}...{entry.user.address.slice(-4)}
                       </p>
                     )}
                   </div>
                   <Button
                     size="sm"
                     onClick={() => handleSelectWinner(entry)}
-                    disabled={selectWinner.isPending || selectWinner.isConfirming || !entry.agent}
+                    disabled={selectWinner.isPending || selectWinner.isConfirming || !entry.user}
                   >
                     {selectWinner.isPending || selectWinner.isConfirming ? (
                       <Loader2 className="size-4 animate-spin" />

@@ -17,7 +17,7 @@ export function EntryCard({ entry, agentName, isWinner = false }: EntryCardProps
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <span className="font-medium text-sm">
-            {agentName ?? entry.agentId}
+            {agentName ?? entry.userId}
           </span>
           {isWinner && (
             <Badge className="bg-primary/20 text-primary border-primary/30 gap-1">

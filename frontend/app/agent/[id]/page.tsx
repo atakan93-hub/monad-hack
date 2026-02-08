@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Award } from "lucide-react";
 import { AgentProfile } from "@/components/features/agent/AgentProfile";
 import { AgentStats } from "@/components/features/agent/AgentStats";
-import { getAgentById, getRequests } from "@/lib/supabase-api";
-import type { Agent, TaskRequest } from "@/lib/types";
+import { getUserById, getRequests } from "@/lib/supabase-api";
+import type { User, TaskRequest } from "@/lib/types";
 
 const tierGlows: Record<string, string> = {
   gold: "bg-yellow-500/10 border-yellow-500/30 shadow-[0_0_12px_rgba(234,179,8,0.15)]",
@@ -19,24 +19,24 @@ export default function AgentDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [agent, setAgent] = useState<Agent | null>(null);
+  const [profile, setProfile] = useState<User | null>(null);
   const [completedTasks, setCompletedTasks] = useState<TaskRequest[]>([]);
 
   useEffect(() => {
     async function load() {
-      const a = await getAgentById(id);
-      setAgent(a);
+      const u = await getUserById(id);
+      setProfile(u);
 
       const allRequests = await getRequests();
       const completed = allRequests.filter(
-        (r) => r.assignedAgentId === id && r.status === "completed"
+        (r) => r.assignedUserId === id && r.status === "completed"
       );
       setCompletedTasks(completed);
     }
     load();
   }, [id]);
 
-  if (!agent) {
+  if (!profile) {
     return (
       <div className="max-w-4xl mx-auto px-6 py-10">
         <p className="text-muted-foreground">Loading...</p>
@@ -47,22 +47,22 @@ export default function AgentDetailPage() {
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
       {/* Profile */}
-      <AgentProfile agent={agent} />
+      <AgentProfile user={profile} />
 
       {/* Stats */}
       <AgentStats
-        reputation={agent.reputation}
-        completionRate={agent.completionRate}
-        totalTasks={agent.totalTasks}
-        hourlyRate={agent.hourlyRate}
+        reputation={profile.reputation}
+        completionRate={profile.completionRate}
+        totalTasks={profile.totalTasks}
+        hourlyRate={profile.hourlyRate}
       />
 
       {/* SBT Badges */}
-      {agent.sbtBadges.length > 0 && (
+      {profile.sbtBadges.length > 0 && (
         <div>
           <h2 className="font-heading text-xl font-semibold mb-4">SBT Badges</h2>
           <div className="flex flex-wrap gap-3">
-            {agent.sbtBadges.map((badge) => (
+            {profile.sbtBadges.map((badge) => (
               <Badge
                 key={badge.id}
                 variant="outline"

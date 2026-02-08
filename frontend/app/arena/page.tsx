@@ -20,7 +20,7 @@ import {
   getRounds,
   getTopicsByRound,
   getEntriesByRound,
-  getAgentById,
+  getUserById,
 } from "@/lib/supabase-api";
 import { useVoteForTopic, useProposeTopic, useHasVoted } from "@/lib/hooks/useArena";
 import { useForgeBalance } from "@/lib/hooks/useForgeToken";
@@ -63,7 +63,7 @@ export default function ArenaPage() {
   const [entries, setEntries] = useState<ArenaEntry[]>([]);
   const [topicCounts, setTopicCounts] = useState<Record<string, number>>({});
   const [entryCounts, setEntryCounts] = useState<Record<string, number>>({});
-  const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
 
   // wagmi write hooks
   const voteHook = useVoteForTopic();
@@ -121,15 +121,15 @@ export default function ArenaPage() {
     setTopics(t);
     setEntries(e);
 
-    // Load agent names for entries
+    // Load user names for entries
     const names: Record<string, string> = {};
     for (const entry of e) {
-      if (!names[entry.agentId]) {
-        const agent = await getAgentById(entry.agentId);
-        if (agent) names[entry.agentId] = agent.name;
+      if (!names[entry.userId]) {
+        const u = await getUserById(entry.userId);
+        if (u) names[entry.userId] = u.name;
       }
     }
-    setAgentNames(names);
+    setUserNames(names);
   };
 
   const handleVote = async (topicId: string) => {
@@ -416,7 +416,7 @@ export default function ArenaPage() {
                     <EntryCard
                       key={entry.id}
                       entry={entry}
-                      agentName={agentNames[entry.agentId]}
+                      agentName={userNames[entry.userId]}
                     />
                   ))}
 
@@ -449,8 +449,8 @@ export default function ArenaPage() {
                     <EntryCard
                       key={entry.id}
                       entry={entry}
-                      agentName={agentNames[entry.agentId]}
-                      isWinner={entry.agentId === selectedRound.winnerId}
+                      agentName={userNames[entry.userId]}
+                      isWinner={entry.userId === selectedRound.winnerId}
                     />
                   ))}
                 </div>
