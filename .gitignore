@@ -8,6 +8,7 @@ frontend/out/
 # foundry
 contract/out/
 contract/cache/
+contract/lib/
 
 # env
 .env*
