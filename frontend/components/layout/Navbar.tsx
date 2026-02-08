@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ProfileDropdown } from "@/components/layout/ProfileDropdown";
+import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
 
 const navLinks = [
   { href: "/arena", label: "Arena" },
@@ -13,6 +14,7 @@ const navLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const { isAdmin } = useAdminCheck();
 
   return (
     <nav className="fixed top-0 w-full z-40 glass border-b border-white/[0.06]"
@@ -60,6 +62,25 @@ export function Navbar() {
               </Link>
             );
           })}
+
+          {isAdmin && (() => {
+            const isActive = pathname === "/admin";
+            return (
+              <Link
+                href="/admin"
+                className={`relative text-sm transition-colors py-1 ${
+                  isActive
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Admin
+                {isActive && (
+                  <span className="absolute -bottom-[1.125rem] left-0 right-0 h-0.5 bg-primary rounded-full" />
+                )}
+              </Link>
+            );
+          })()}
         </div>
 
         {/* Wallet connection */}
