@@ -51,11 +51,11 @@
 
 | Status | File Path | Description | Date |
 |--------|-----------|-------------|------|
-| [x] | `frontend/lib/types.ts` | User, Agent, TaskRequest, Proposal, Bounty, EscrowDeal + enum types | 2026-02-08 |
-| [x] | `frontend/lib/mock-data.ts` | mockUsers(5), mockAgents(6), mockRequests(6), mockProposals(12), mockBounties(4), mockEscrows(3) | 2026-02-08 |
-| [x] | `frontend/lib/mock-api.ts` | 19 CRUD functions (Promise return, 200ms delay) | 2026-02-08 |
+| [x] | `frontend/lib/types.ts` | User (with agent fields), TaskRequest, Proposal, Round, Topic, ArenaEntry, EscrowDeal | 2026-02-08 |
+| ~~[x]~~ | ~~`frontend/lib/mock-data.ts`~~ | ~~Deleted — data inlined into seed.ts~~ | N/A |
+| ~~[x]~~ | ~~`frontend/lib/mock-api.ts`~~ | ~~Deleted — replaced by supabase-api.ts~~ | N/A |
 
-**Completion Criteria:** mock-api functions return correct data when called
+**Completion Criteria:** ~~mock-api functions return correct data when called~~ Superseded by Phase 8 (Supabase)
 **Details:** [`docs/phases/PHASE3-mock-data.md`](docs/phases/PHASE3-mock-data.md)
 
 ---
@@ -75,8 +75,12 @@
 ### Feature Components
 | Status | File Path | Description | Date |
 |--------|-----------|-------------|------|
-| [x] | `frontend/components/features/arena/BountyCard.tsx` | Status Badge + title + prize + participants + deadline | 2026-02-08 |
-| [x] | `frontend/components/features/arena/VoteButton.tsx` | Token amount input + vote execution | 2026-02-08 |
+| ~~[x]~~ | ~~`frontend/components/features/arena/BountyCard.tsx`~~ | ~~Deleted — replaced by RoundCard.tsx~~ | N/A |
+| ~~[x]~~ | ~~`frontend/components/features/arena/VoteButton.tsx`~~ | ~~Deleted — replaced by TopicVoteButton.tsx~~ | N/A |
+| [x] | `frontend/components/features/arena/RoundCard.tsx` | Round number + prize + status Badge + topic/entry counts | 2026-02-08 |
+| [x] | `frontend/components/features/arena/TopicCard.tsx` | Title + description + vote count + children slot | 2026-02-08 |
+| [x] | `frontend/components/features/arena/TopicVoteButton.tsx` | Vote button (purple/cyan theme) | 2026-02-08 |
+| [x] | `frontend/components/features/arena/EntryCard.tsx` | User name + repo/demo links + winner highlight | 2026-02-08 |
 | [x] | `frontend/components/features/market/RequestCard.tsx` | Category Badge + title + budget + proposal count | 2026-02-08 |
 | [x] | `frontend/components/features/market/ProposalForm.tsx` | Price + Days + Message + Agent selection | 2026-02-08 |
 | [x] | `frontend/components/features/market/FilterSidebar.tsx` | Category checkboxes + Status radio + Budget range | 2026-02-08 |
@@ -169,18 +173,145 @@
 
 ---
 
+## Phase 8: Supabase DB + API
+
+### New Files
+| Status | File Path | Description | Date |
+|--------|-----------|-------------|------|
+| [x] | `frontend/.env.local` | NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY | 2026-02-09 |
+| [x] | `frontend/lib/supabase.ts` | createClient singleton | 2026-02-09 |
+| [x] | `frontend/lib/database.types.ts` | Schema type definitions (Row/Insert/Update per table) | 2026-02-09 |
+| [x] | `frontend/lib/supabase-api.ts` | 25+ query functions (same signatures as mock-api.ts) | 2026-02-09 |
+| [x] | `frontend/lib/hooks/useUser.ts` | Upsert users table on wallet connect | 2026-02-09 |
+| [x] | `frontend/lib/seed.ts` | Seed Supabase with test data (one-time execution) | 2026-02-09 |
+
+### DB Migration
+| Status | File Path | Description | Date |
+|--------|-----------|-------------|------|
+| [x] | `supabase/migrations/20260209_merge_agents_into_users.sql` | Full reset: DROP all + CREATE 8 tables (agents merged into users) | 2026-02-09 |
+
+### Modified Files (import migration)
+| Status | File Path | Changes | Date |
+|--------|-----------|---------|------|
+| [x] | `frontend/app/arena/page.tsx` | mock-api → supabase-api import | 2026-02-09 |
+| [x] | `frontend/app/market/page.tsx` | mock-api → supabase-api import | 2026-02-09 |
+| [x] | `frontend/app/market/[id]/page.tsx` | mock-api → supabase-api import | 2026-02-09 |
+| [x] | `frontend/app/agent/[id]/page.tsx` | mock-api → supabase-api import | 2026-02-09 |
+| [x] | `frontend/app/dashboard/page.tsx` | mock-api → supabase-api import | 2026-02-09 |
+| [x] | `frontend/components/features/market/ProposalForm.tsx` | useUser integration | 2026-02-09 |
+
+**Completion Criteria:** All pages display Supabase data, CRUD operations work
+**Details:** [`docs/phases/PHASE8-supabase.md`](docs/phases/PHASE8-supabase_kr.md)
+
+---
+
+## Phase 9: Contract Testnet Deployment
+
+| Status | File Path | Description | Date |
+|--------|-----------|-------------|------|
+| [x] | `contract/script/Deploy.s.sol` | Deploy Escrow + Arena (external FORGE token) | 2026-02-08 |
+| [x] | `contract/broadcast/` | Deployment broadcast records (Monad Testnet chain 10143) | 2026-02-09 |
+| [x] | `frontend/lib/contracts/addresses.ts` (modified) | Placeholder → real deployment addresses | 2026-02-09 |
+
+**Completion Criteria:** Real contract addresses set, wagmi hooks call on-chain
+**Details:** [`docs/phases/PHASE9-deployment.md`](docs/phases/PHASE9-deployment_kr.md)
+
+---
+
+## Phase 10: Full UI Redesign
+
+### New Files
+| Status | File Path | Description | Date |
+|--------|-----------|-------------|------|
+| [x] | `frontend/components/ui/skeleton.tsx` | Loading shimmer animation component | 2026-02-09 |
+
+### Modified Files
+| Status | File Path | Changes | Date |
+|--------|-----------|---------|------|
+| [x] | `frontend/app/globals.css` | .glass, .glass-strong, .glow-cyan, circuit pattern, theme overhaul | 2026-02-09 |
+| [x] | `frontend/app/page.tsx` | Landing redesign: left text + right hero, circuit overlay | 2026-02-09 |
+| [x] | `frontend/components/layout/Navbar.tsx` | Glassmorphism background | 2026-02-09 |
+| [x] | `frontend/components/layout/Footer.tsx` | Glassmorphism + lucide icons | 2026-02-09 |
+| [x] | `frontend/app/arena/page.tsx` | Glass cards, vote progress bars | 2026-02-09 |
+| [x] | `frontend/app/market/page.tsx` | Glass RequestCard, styled filters | 2026-02-09 |
+| [x] | `frontend/app/market/[id]/page.tsx` | Glass proposal cards | 2026-02-09 |
+| [x] | `frontend/app/agent/[id]/page.tsx` | Glass hero card, tier badge glow | 2026-02-09 |
+| [x] | `frontend/app/dashboard/page.tsx` | Glass StatCards, icon glow | 2026-02-09 |
+| [x] | `frontend/components/features/arena/RoundCard.tsx` | Glass + status glow border | 2026-02-09 |
+| [x] | `frontend/components/features/arena/TopicCard.tsx` | Vote progress bar | 2026-02-09 |
+| [x] | `frontend/components/features/arena/EntryCard.tsx` | Winner golden glow | 2026-02-09 |
+| [x] | `frontend/components/features/market/RequestCard.tsx` | Glass + category color | 2026-02-09 |
+| [x] | `frontend/components/features/agent/AgentProfile.tsx` | Glass card | 2026-02-09 |
+| [x] | `frontend/components/features/agent/AgentStats.tsx` | lucide icons | 2026-02-09 |
+| [x] | `frontend/components/features/common/StatCard.tsx` | Glass + glow | 2026-02-09 |
+
+**Completion Criteria:** Glassmorphism + cyan accent on all pages, no emoji remaining
+**Details:** [`docs/phases/PHASE10-ui-redesign.md`](docs/phases/PHASE10-ui-redesign_kr.md)
+
+---
+
+## Phase 11: Admin Page + SIWE Auth
+
+### New Files
+| Status | File Path | Description | Date |
+|--------|-----------|-------------|------|
+| [x] | `frontend/app/admin/page.tsx` | Admin round management UI (wallet gate) | 2026-02-09 |
+| [x] | `frontend/lib/hooks/useAdminCheck.ts` | Arena.admin() wallet comparison hook | 2026-02-09 |
+
+### Modified Files
+| Status | File Path | Changes | Date |
+|--------|-----------|---------|------|
+| [x] | `frontend/components/layout/Navbar.tsx` | Conditional Admin link (isAdmin) | 2026-02-09 |
+| [x] | `frontend/app/providers.tsx` | SIWE login integration | 2026-02-09 |
+| [x] | `frontend/lib/supabase-api.ts` | Admin API functions extracted | 2026-02-09 |
+
+**Completion Criteria:** Admin wallet gate + round CRUD + SIWE mandatory login
+**Details:** [`docs/phases/PHASE11-admin.md`](docs/phases/PHASE11-admin_kr.md)
+
+---
+
+## Post-Phase: API Routes + On-chain Verification + Agent→User Merge
+
+### New Files
+| Status | File Path | Description | Date |
+|--------|-----------|-------------|------|
+| [x] | `frontend/app/api/market/requests/route.ts` | API route for task request mutations | 2026-02-09 |
+| [x] | `frontend/app/api/market/proposals/route.ts` | API route for proposal mutations | 2026-02-09 |
+| [x] | `frontend/app/api/arena/sync/route.ts` | API route for arena on-chain sync | 2026-02-09 |
+| [x] | `frontend/app/api/escrow/sync/route.ts` | API route for escrow on-chain sync | 2026-02-09 |
+| [x] | `frontend/lib/context/UserProvider.tsx` | React context for user state | 2026-02-09 |
+| [x] | `frontend/lib/resolve-user.ts` | resolveUserId(address) helper | 2026-02-09 |
+
+### Modified Files (Agent→User merge)
+| Status | File Path | Changes | Date |
+|--------|-----------|---------|------|
+| [x] | `frontend/lib/types.ts` | Agent interface removed, User extended | 2026-02-09 |
+| [x] | `frontend/lib/database.types.ts` | agents table removed, users extended | 2026-02-09 |
+| [x] | `frontend/lib/supabase-api.ts` | agent functions → user functions | 2026-02-09 |
+| [x] | `frontend/lib/seed.ts` | Data inlined, mock-data dependency removed | 2026-02-09 |
+| [x] | All pages + components | agentId → userId, Agent → User | 2026-02-09 |
+
+**Completion Criteria:** Build passes, no Agent type references, API routes functional
+
+---
+
 ## File Count Summary
 
 | Phase | File Count | Completed | Details Doc |
 |-------|------------|-----------|-------------|
 | Phase 1: Setup | 8 | 8/8 | [PHASE1](docs/phases/PHASE1-setup.md) |
-| Phase 2: UI Component Library | 9 | 9/9 | [PHASE2](docs/phases/PHASE2-ui-components.md) |
-| Phase 3: Mock Data | 3 | 3/3 | [PHASE3](docs/phases/PHASE3-mock-data.md) |
-| Phase 4: Pages + Features | 14 | 14/14 | [PHASE4](docs/phases/PHASE4-pages.md) |
-| ~~Phase 5: Wallet Connection~~ | ~~5~~ | ~~5/5~~ | [PHASE5](docs/phases/PHASE5-wallet.md) |
-| Phase 6: Smart Contracts | 6 | 6/6 | [PHASE6](docs/phases/PHASE6-contracts.md) |
+| Phase 2: UI Components | 9 | 9/9 | [PHASE2](docs/phases/PHASE2-ui-components.md) |
+| Phase 3: Mock Data | 1 | 1/1 | [PHASE3](docs/phases/PHASE3-mock-data.md) |
+| Phase 4: Pages + Features | 18 | 18/18 | [PHASE4](docs/phases/PHASE4-pages.md) |
+| Phase 5: Wallet | 5 | 5/5 | [PHASE5](docs/phases/PHASE5-wallet.md) |
+| Phase 6: Contracts | 6 | 6/6 | [PHASE6](docs/phases/PHASE6-contracts.md) |
 | Phase 7: Integration | 15 | 15/15 | [PHASE7](docs/phases/PHASE7-integration.md) |
-| **Total** | **59** | **59/59** | |
+| Phase 8: Supabase | 13 | 13/13 | [PHASE8](docs/phases/PHASE8-supabase_kr.md) |
+| Phase 9: Deployment | 3 | 3/3 | [PHASE9](docs/phases/PHASE9-deployment_kr.md) |
+| Phase 10: UI Redesign | 17 | 17/17 | [PHASE10](docs/phases/PHASE10-ui-redesign_kr.md) |
+| Phase 11: Admin + SIWE | 5 | 5/5 | [PHASE11](docs/phases/PHASE11-admin_kr.md) |
+| Post-Phase | 11 | 11/11 | — |
+| **Total** | **111** | **111/111** | |
 
 ---
 
@@ -191,8 +322,15 @@ Phase 1 (Setup)
  ├─→ Phase 2 (UI) ──────────┐
  ├─→ Phase 3 (Mock) ────────┼─→ Phase 4 (Pages) ─→ Phase 5 (Wallet) ─┐
  └─→ Phase 6 (Contracts) ───────────────────────────────────────────┼─→ Phase 7 (Integration)
+                                                                     │
+Phase 8 (Supabase) ──┐                                              │
+Phase 9 (Deploy)  ───┼──→ Phase 11 (Admin + SIWE) ──→ Post-Phase (API Routes + Merge)
+Phase 10 (Redesign) ─┘
 ```
 
 - Phase 2, 3, 6 can proceed **in parallel** after Phase 1
 - Phase 4 requires Phase 2 + 3 completion
 - Phase 7 requires Phase 4 + 5 + 6 completion
+- Phase 8, 9, 10 can proceed **in parallel** after Phase 7
+- Phase 11 requires Phase 8 + 9 completion
+- Post-Phase enhancements applied after Phase 11

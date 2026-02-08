@@ -206,6 +206,145 @@ Coding → Self-verification → Checklist check → Phase review → Next Phase
 
 ---
 
+### Phase 8: Supabase DB + API
+| Item | Status | Notes |
+|------|--------|-------|
+| Supabase project created | ✅ | Free tier, anon key for MVP |
+| 9 tables created (schema + FKs) | ✅ | users, agents, sbt_badges, task_requests, proposals, rounds, topics, arena_entries, escrow_deals |
+| RLS "Allow all" policies | ✅ | Hackathon-grade, no auth gating |
+| `increment_votes` RPC function | ✅ | Atomic vote count increment |
+| supabase.ts singleton client | ✅ | createClient with env vars |
+| database.types.ts schema types | ✅ | Full Row/Insert/Update types per table |
+| supabase-api.ts (25+ functions) | ✅ | Same signatures as mock-api.ts |
+| useUser.ts hook | ✅ | Upsert users table on wallet connect |
+| seed.ts seeding script | ✅ | Seed all tables with test data |
+| All pages migrated (mock-api → supabase-api) | ✅ | 5 pages + ProposalForm |
+| Build successful | ✅ | `npm run build` 0 errors |
+
+**Review Notes:**
+> - **Core strategy**: `supabase-api.ts` maintains identical function signatures as `mock-api.ts`. Pages only change import paths.
+> - `.env.local` stores `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` — not committed to git.
+> - `useUser.ts` auto-upserts user record on wallet connection (address-based lookup/create).
+> - `seed.ts` uses `mock-data.ts` arrays to populate Supabase tables. Run once with `npx tsx lib/seed.ts`.
+> - `increment_votes` PostgreSQL function enables atomic vote counting without race conditions.
+
+---
+
+### Phase 9: Contract Testnet Deployment
+| Item | Status | Notes |
+|------|--------|-------|
+| FORGE token identified | ✅ | Existing ERC20+permit (0x0bA5...7777) — no MockToken needed |
+| Escrow deployed to Monad Testnet | ✅ | Real contract address |
+| Arena deployed to Monad Testnet | ✅ | Real contract address |
+| Treasury address configured | ✅ | Fee collection address set |
+| addresses.ts updated | ✅ | Placeholder → real deployment addresses |
+| wagmi hooks making real on-chain calls | ✅ | isOnChain flag now true |
+| Build successful | ✅ | `npm run build` 0 errors |
+
+**Review Notes:**
+> - **MockToken NOT deployed**: Using existing ERC20+permit token (ARENA) as FORGE token. Simplifies deployment.
+> - Broadcast records saved in `contract/broadcast/Deploy.s.sol/10143/`.
+> - After deployment, `addresses.ts` updated — wagmi hooks perform real on-chain transactions.
+
+---
+
+### Phase 10: Full UI Redesign
+| Item | Status | Notes |
+|------|--------|-------|
+| Design system overhaul (globals.css) | ✅ | Background #0a0a0f + purple gradient, accent → cyan |
+| Glassmorphism cards (.glass, .glass-strong) | ✅ | backdrop-blur + white/5 transparency |
+| Cyan accent (.glow-cyan, .glow-cyan-sm) | ✅ | Replaces blue as secondary accent |
+| Emoji → lucide-react icons | ✅ | 15+ component files updated |
+| skeleton.tsx component | ✅ | Loading shimmer animation |
+| Landing page redesign | ✅ | Left text + right hero.webp, circuit pattern overlay |
+| Navbar glassmorphism | ✅ | backdrop-blur-xl background |
+| Arena page redesign | ✅ | Glass RoundCard, vote progress bars, winner glow |
+| Market page redesign | ✅ | Glass RequestCard, styled FilterSidebar |
+| Dashboard redesign | ✅ | Glass StatCards with icon glow |
+| Agent profile redesign | ✅ | Glass hero card, tier-based badge glow |
+| Footer redesign | ✅ | Glassmorphism + lucide social icons |
+| Build successful | ✅ | `npm run build` 0 errors |
+
+**Review Notes:**
+> - **Full theme overhaul**: Background `#09090B` → `#0a0a0f` + purple gradient, accent `#3B82F6` (blue) → `#06B6D4` (cyan/teal).
+> - **Glassmorphism pattern**: `.glass` class with `backdrop-blur`, `bg-white/5`, subtle border. Applied to all cards and containers.
+> - **lucide-react**: All emoji icons replaced with lucide-react components across 15+ files.
+> - **Circuit pattern overlay**: CSS pseudo-element background on hero section.
+> - Responsive verified at 375px / 768px / 1440px breakpoints.
+
+---
+
+### Phase 11: Admin Page + SIWE Auth
+| Item | Status | Notes |
+|------|--------|-------|
+| admin/page.tsx created | ✅ | Round management UI |
+| useAdminCheck.ts hook | ✅ | Wallet gate via Arena.admin() comparison |
+| Create round (on-chain + Supabase) | ✅ | Dual recording pattern |
+| Advance round state transitions | ✅ | Proposing → Voting → Active → Completed |
+| Select winner from entry list | ✅ | Prize payout verification |
+| Admin link in Navbar (conditional) | ✅ | Only visible when isAdmin |
+| SIWE mandatory login | ✅ | Sign-In with Ethereum + profile dropdown |
+| Admin API functions in supabase-api | ✅ | Extracted from raw queries in admin page |
+| Build successful | ✅ | `npm run build` 0 errors |
+
+**Review Notes:**
+> - **Wallet gate**: `useAdminCheck()` reads `Arena.admin()` on-chain and compares with connected wallet. Non-admin users see access denied.
+> - **Dual recording**: On-chain tx success → Supabase update. Same pattern used in `arena/page.tsx` for votes.
+> - **SIWE login**: Sign-In with Ethereum mandatory for all authenticated actions. Profile dropdown replaces raw ConnectButton.
+> - **Admin API cleanup**: Raw Supabase queries extracted from admin page into `supabase-api.ts` admin functions.
+
+---
+
+### Post-Phase Enhancements
+| Item | Status | Notes |
+|------|--------|-------|
+| Arena migrate to OpenZeppelin Ownable | ✅ | Constructor admin pattern (replaces custom admin variable) |
+| Defer vote count until on-chain tx confirmed | ✅ | Prevents premature DB updates on failed txs |
+| Voting power UI (FORGE balance display) | ✅ | Shows user's voting weight |
+| Contract redeploy (post-Ownable migration) | ✅ | Updated addresses in addresses.ts |
+| API routes (fetch-based) | ✅ | 4 routes: market/requests, market/proposals, arena/sync, escrow/sync |
+| Frontend pages migrated to fetch API | ✅ | Server-side Supabase queries via API routes |
+| On-chain verification for arena/escrow sync | ✅ | Read contract state after tx to verify |
+| Address-based auth | ✅ | resolveUserId(address), no signature verification |
+| UUID bugfix | ✅ | gen_random_uuid()::text for text PKs |
+| Build successful | ✅ | `npm run build` 0 errors |
+
+**Review Notes:**
+> - **API routes**: 4 Next.js API routes proxy Supabase mutations. Frontend calls fetch() instead of direct Supabase client.
+> - **On-chain verification**: After on-chain tx, read contract state to verify before updating Supabase. Prevents stale DB records.
+> - **Address-based auth**: `resolveUserId(address)` looks up user by wallet address. No signature verification for hackathon simplicity.
+> - **Ownable migration**: Arena.sol constructor sets admin via OpenZeppelin Ownable pattern instead of custom admin variable.
+
+---
+
+### Agent→User Merge Refactoring
+| Item | Status | Notes |
+|------|--------|-------|
+| DB migration SQL (full reset) | ✅ | DROP all + CREATE with agents merged into users |
+| types.ts Agent interface removed | ✅ | User extended with agent fields (description, reputation, skills, etc.) |
+| database.types.ts agents table removed | ✅ | users table extended with agent columns |
+| supabase-api.ts agent functions removed | ✅ | User functions handle all agent fields |
+| mock-api.ts deleted | ✅ | Superseded by supabase-api.ts |
+| mock-data.ts deleted | ✅ | Data inlined into seed.ts (snake_case) |
+| seed.ts data inlined | ✅ | No mock-data dependency, snake_case column names |
+| All agent_id → user_id in DB schema | ✅ | sbt_badges, proposals, arena_entries, escrow_deals, task_requests |
+| All agentId → userId in TS types | ✅ | Proposal, ArenaEntry, EscrowDeal, TaskRequest |
+| API routes updated (agent_id → user_id) | ✅ | market/proposals, escrow/sync |
+| All pages and components updated | ✅ | 8+ files |
+| UserProvider.tsx context added | ✅ | React context for user state |
+| resolve-user.ts helper added | ✅ | resolveUserId(address) utility |
+| Supabase DB reset and re-seeded | ✅ | Full reset applied, seed successful |
+| Build successful | ✅ | `npm run build` 0 errors |
+
+**Review Notes:**
+> - **Motivation**: 1 wallet = 1 user = 1 agent. Separate `users`/`agents` tables added unnecessary FK complexity.
+> - **Full DB reset**: DROP CASCADE + CREATE (acceptable for hackathon with no production data).
+> - **mock-api/mock-data deleted**: User explicitly requested removal. Seed data inlined directly into `seed.ts`.
+> - **3 commits**: Schema (types + DB) → Data layer (api + seed + routes) → UI (pages + components).
+> - **`npx tsx` env loading**: Doesn't auto-load `.env.local` — must source env vars manually before running seed.
+
+---
+
 ## Issue Tracker
 
 | # | Phase | Issue Description | Severity | Status | Resolution |
@@ -222,6 +361,12 @@ Coding → Self-verification → Checklist check → Phase review → Next Phase
 | 10 | P6 | Escrow fee system added | 🟢 Minor | Resolved | feeRate + treasury, setFeeRate/setTreasury admin functions |
 | 11 | P3~4 | mock-api.ts rounds `let`→`const` ESLint fix | 🟢 Minor | Resolved | No reassignment so const. Need to restore to let when adding createRound |
 | 12 | P3~4 | BountyCard.tsx, VoteButton.tsx legacy files remain | 🟢 Minor | Resolved | Build error on Bounty type import → resolved by deletion |
+| 13 | P8 | Supabase `PostgrestError` not `instanceof Error` | 🟡 Warning | Resolved | Use `JSON.stringify(err)` for error messages |
+| 14 | P9 | MockToken deployment unnecessary | 🟢 Minor | Resolved | Use existing ERC20+permit token (ARENA) at 0x0bA5...7777 |
+| 15 | P11 | SIWE login added for security | 🟢 Minor | Resolved | Sign-In with Ethereum + profile dropdown |
+| 16 | Post | `npx tsx` doesn't auto-load `.env.local` | 🟡 Warning | Resolved | Source env vars manually: `source <(grep -v '^#' .env.local \| sed 's/^/export /')` |
+| 17 | Post | Agent→User merge: mock-api.ts/mock-data.ts deleted | 🟢 Minor | Resolved | Data inlined into seed.ts, supabase-api.ts is sole data layer |
+| 18 | Post | UUID text PK needs `gen_random_uuid()::text` | 🟡 Warning | Resolved | DB migration uses `::text` cast for text-type primary keys |
 
 > Severity: 🔴 Critical / 🟡 Warning / 🟢 Minor
 
@@ -247,6 +392,14 @@ Coding → Self-verification → Checklist check → Phase review → Next Phase
 | 14 | 2026-02-08 | Remove barrel export (index.ts), use direct imports | Only 4 files, unnecessary abstraction. Direct import is clearer | index.ts re-export |
 | 15 | 2026-02-08 | Use WebP format for assets | 25~35% size reduction vs PNG. Compatible with Next.js Image | Use PNG originals |
 | 16 | 2026-02-08 | isOnChain flag for mock/contract branching | Maintain mock fallback when contract not deployed. After deployment, only replace address | Environment variable branching, feature flag |
+| 17 | 2026-02-09 | Supabase as backend with "Allow all" RLS | Hackathon MVP, no auth gating needed | Firebase, custom backend |
+| 18 | 2026-02-09 | Glassmorphism + cyan accent UI redesign | Premium dark Web3 aesthetic | Keep original blue theme |
+| 19 | 2026-02-09 | SIWE mandatory login | Security over raw wallet connection | Address-only identification |
+| 20 | 2026-02-09 | Merge agents table into users | 1 wallet = 1 user = 1 agent, reduce FK complexity | Keep separate tables |
+| 21 | 2026-02-09 | Address-based auth (no signature for hackathon) | Simplicity for MVP | Full SIWE signature verification on every API call |
+| 22 | 2026-02-09 | Delete mock-api/mock-data, inline seed data | Supabase-api is sole data layer, no dual maintenance | Keep mock as fallback |
+| 23 | 2026-02-09 | API routes for Supabase mutations | Server-side proxy, prevent direct client writes | Direct client-side Supabase |
+| 24 | 2026-02-09 | Arena Ownable migration (OpenZeppelin) | Standard pattern, better than custom admin variable | Keep custom admin |
 
 ---
 
@@ -254,11 +407,17 @@ Coding → Self-verification → Checklist check → Phase review → Next Phase
 
 | # | Verification Item | Command/Method | Status |
 |---|----------|-----------|------|
-| 1 | Frontend build | `npm run build` | ✅ 0 errors, 8 routes |
+| 1 | Frontend build | `npm run build` | ✅ 0 errors |
 | 2 | Page navigation | Verify all routes in browser | ⬜ (manual verification needed) |
 | 3 | Contract compile | `forge build` | ✅ |
 | 4 | Contract tests | `forge test` | ✅ 36 passed, 0 failed |
 | 5 | Wallet connection | ConnectWallet button behavior | ⬜ (manual verification needed) |
 | 6 | wagmi hooks import | Verify no import errors | ✅ Confirmed via build pass |
-| 7 | UI glow/animations | Visual effects behavior | ⬜ (manual verification needed) |
+| 7 | UI glassmorphism + animations | Visual effects behavior | ⬜ (manual verification needed) |
 | 8 | Asset display | Logo + hero image | ⬜ (manual verification needed) |
+| 9 | Supabase data display | All pages show Supabase data | ✅ Seed data verified |
+| 10 | Contract on-chain calls | wagmi hooks call real contracts | ✅ Real addresses set |
+| 11 | SIWE login | Sign-In with Ethereum flow | ⬜ (manual verification needed) |
+| 12 | Admin page access | Wallet gate + round management | ⬜ (manual verification needed) |
+| 13 | Agent→User merge | No Agent type references remain | ✅ Build passes |
+| 14 | API routes | fetch-based Supabase mutations | ✅ 4 routes implemented |
