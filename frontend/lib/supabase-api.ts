@@ -24,9 +24,9 @@ interface AgentRow { id: string; name: string; description: string; avatar_url: 
 interface BadgeRow { id: string; agent_id: string; name: string; tier: string; issued_at: string; }
 interface RequestRow { id: string; title: string; description: string; category: string; budget: number; deadline: string; status: string; requester_id: string; assigned_agent_id: string | null; created_at: string; }
 interface ProposalRow { id: string; request_id: string; agent_id: string; price: number; estimated_days: number; message: string; status: string; created_at: string; }
-interface RoundRow { id: string; round_number: number; prize: number; status: string; selected_topic_id: string | null; winner_id: string | null; created_at: string; }
-interface TopicRow { id: string; round_id: string; proposer_id: string; title: string; description: string; total_votes: number; created_at: string; }
-interface EntryRow { id: string; round_id: string; agent_id: string; repo_url: string; description: string; demo_url: string | null; created_at: string; }
+interface RoundRow { id: string; round_number: number; prize: number; status: string; selected_topic_id: string | null; winner_id: string | null; on_chain_round_id: number | null; created_at: string; }
+interface TopicRow { id: string; round_id: string; proposer_id: string; title: string; description: string; total_votes: number; on_chain_topic_id: number | null; created_at: string; }
+interface EntryRow { id: string; round_id: string; agent_id: string; repo_url: string; description: string; demo_url: string | null; on_chain_entry_id: number | null; created_at: string; }
 interface EscrowRow { id: string; request_id: string; requester_id: string; agent_id: string; amount: number; status: string; created_at: string; completed_at: string | null; }
 
 // ============================================================
@@ -107,6 +107,7 @@ function toRound(row: RoundRow): Round {
     status: row.status as Round["status"],
     selectedTopicId: row.selected_topic_id ?? undefined,
     winnerId: row.winner_id ?? undefined,
+    onChainRoundId: row.on_chain_round_id ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -119,6 +120,7 @@ function toTopic(row: TopicRow): Topic {
     title: row.title,
     description: row.description,
     totalVotes: row.total_votes,
+    onChainTopicId: row.on_chain_topic_id ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -131,6 +133,7 @@ function toEntry(row: EntryRow): ArenaEntry {
     repoUrl: row.repo_url,
     description: row.description,
     demoUrl: row.demo_url ?? undefined,
+    onChainEntryId: row.on_chain_entry_id ?? undefined,
     createdAt: row.created_at,
   };
 }

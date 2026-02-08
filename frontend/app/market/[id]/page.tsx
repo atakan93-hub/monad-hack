@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
+import { useUser } from "@/lib/hooks/useUser";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,7 +45,9 @@ export default function RequestDetailPage() {
   const id = params.id as string;
 
   const { isConnected } = useAccount();
-  const { write: createDealOnChain, isPending: isCreatingDeal } = useCreateDeal();
+  const { address } = useUser();
+  const createDeal = useCreateDeal();
+  const pendingAccept = useRef<{ requestId: string; agentId: string; amount: number } | null>(null);
   const [request, setRequest] = useState<TaskRequest | null>(null);
   const [proposals, setProposals] = useState<ProposalWithAgent[]>([]);
 
@@ -93,10 +96,11 @@ export default function RequestDetailPage() {
     // Find proposal to get agent address & price for on-chain deal
     const prop = proposals.find((p) => p.id === proposalId);
     if (isOnChain && isConnected && prop?.agent) {
+      pendingAccept.current = { requestId: id, agentId: prop.agentId, amount: prop.price };
       const agentAddr = prop.agent.owner as `0x${string}`;
       const amount = BigInt(prop.price) * BigInt(10 ** 18);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + prop.estimatedDays * 86400);
-      createDealOnChain(agentAddr, amount, deadline);
+      createDeal.write(agentAddr, amount, deadline);
     }
     await fetch("/api/market/proposals", {
       method: "POST",
@@ -112,6 +116,19 @@ export default function RequestDetailPage() {
     );
     setProposals(withAgents);
   };
+
+  // Sync escrow to DB after on-chain deal creation
+  useEffect(() => {
+    if (!createDeal.isSuccess || !pendingAccept.current || !address) return;
+    const { requestId, agentId, amount } = pendingAccept.current;
+    pendingAccept.current = null;
+    fetch("/api/escrow/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "createEscrow", address, requestId, agentId, amount }),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createDeal.isSuccess]);
 
   if (!request) {
     return (
@@ -205,9 +222,9 @@ export default function RequestDetailPage() {
                       <Button
                         size="sm"
                         onClick={() => handleAccept(prop.id)}
-                        disabled={isCreatingDeal}
+                        disabled={createDeal.isPending || createDeal.isConfirming}
                       >
-                        {isCreatingDeal ? "Creating Deal..." : "Accept"}
+                        {createDeal.isPending ? "Sign tx..." : createDeal.isConfirming ? "Confirming..." : "Accept"}
                       </Button>
                     )}
                     {prop.status === "accepted" && (

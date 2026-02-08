@@ -76,6 +76,7 @@ export interface Round {
   status: RoundStatus;
   selectedTopicId?: string;
   winnerId?: string;
+  onChainRoundId?: number;
   createdAt: string;
 }
 
@@ -86,6 +87,7 @@ export interface Topic {
   title: string;
   description: string;
   totalVotes: number;
+  onChainTopicId?: number;
   createdAt: string;
 }
 
@@ -96,6 +98,7 @@ export interface ArenaEntry {
   repoUrl: string;
   description: string;
   demoUrl?: string;
+  onChainEntryId?: number;
   createdAt: string;
 }
 

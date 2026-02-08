@@ -45,17 +45,17 @@ export function useSelectWinner() {
 
 export function useProposeTopic() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const write = (roundId: bigint, title: string, description: string) =>
     writeContract({ ...arenaConfig, functionName: "proposeTopic", args: [roundId, title, description] });
 
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  return { write, hash, receipt, isPending, isConfirming, isSuccess, error };
 }
 
 export function useVoteForTopic() {
   const { writeContract, writeContractAsync, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const write = (topicId: bigint) =>
     writeContract({ ...arenaConfig, functionName: "voteForTopic", args: [topicId] });
@@ -63,7 +63,7 @@ export function useVoteForTopic() {
   const writeAsync = (topicId: bigint) =>
     writeContractAsync({ ...arenaConfig, functionName: "voteForTopic", args: [topicId] });
 
-  return { write, writeAsync, hash, isPending, isConfirming, isSuccess, error };
+  return { write, writeAsync, hash, receipt, isPending, isConfirming, isSuccess, error };
 }
 
 export function useSubmitEntry() {

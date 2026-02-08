@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useUser } from "@/lib/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { RequestCard } from "@/components/features/market/RequestCard";
 import { FilterSidebar } from "@/components/features/market/FilterSidebar";
@@ -16,6 +17,7 @@ import { getRequests } from "@/lib/supabase-api";
 import type { TaskRequest, RequestStatus, RequestCategory } from "@/lib/types";
 
 export default function MarketPage() {
+  const { address } = useUser();
   const [requests, setRequests] = useState<TaskRequest[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<RequestStatus | "all">("all");
   const [selectedCategories, setSelectedCategories] = useState<RequestCategory[]>([]);
@@ -60,7 +62,7 @@ export default function MarketPage() {
         budget: parseInt(formBudget),
         category: formCategory,
         deadline: new Date(formDeadline).toISOString(),
-        requesterId: "user-1",
+        address,
       }),
     });
     setShowNewRequest(false);

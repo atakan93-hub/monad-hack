@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { resolveUserId } from "@/lib/resolve-user";
 
 // POST /api/market/requests — create a new task request
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { title, description, category, budget, deadline, requesterId } = body;
+  const { title, description, category, budget, deadline, address } = body;
 
   try {
+    const requesterId = await resolveUserId(address);
     const { data, error } = await supabase
       .from("task_requests")
       .insert({

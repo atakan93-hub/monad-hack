@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccount } from "wagmi";
+import { useUser } from "@/lib/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,7 +25,8 @@ import {
 import { useVoteForTopic, useProposeTopic, useHasVoted } from "@/lib/hooks/useArena";
 import { useForgeBalance } from "@/lib/hooks/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
-import { formatUnits } from "viem";
+import { formatUnits, decodeEventLog } from "viem";
+import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
 import type { Round, Topic, ArenaEntry, RoundStatus } from "@/lib/types";
 
 const isOnChain = CONTRACT_ADDRESSES.ARENA !== "0x0000000000000000000000000000000000000000";
@@ -53,6 +55,7 @@ const statusBanners: Record<string, string> = {
 
 export default function ArenaPage() {
   const { isConnected } = useAccount();
+  const { address } = useUser();
   const [rounds, setRounds] = useState<Round[]>([]);
   const [filter, setFilter] = useState<RoundStatus | "all">("all");
   const [selectedRound, setSelectedRound] = useState<Round | null>(null);
@@ -67,8 +70,8 @@ export default function ArenaPage() {
   const proposeHook = useProposeTopic();
 
   // Voting power: FORGE balance + already voted check
-  const roundIdNum = selectedRound
-    ? BigInt(selectedRound.id.replace("round-", ""))
+  const roundIdNum = selectedRound?.onChainRoundId != null
+    ? BigInt(selectedRound.onChainRoundId)
     : 0n;
   const { data: forgeBalance } = useForgeBalance();
   const { data: alreadyVoted } = useHasVoted(roundIdNum);
@@ -130,14 +133,15 @@ export default function ArenaPage() {
   };
 
   const handleVote = async (topicId: string) => {
-    if (isOnChain && isConnected) {
+    const topic = topics.find((t) => t.id === topicId);
+    if (isOnChain && isConnected && topic?.onChainTopicId != null) {
       pendingVoteTopicId.current = topicId;
-      voteHook.write(BigInt(topicId.replace("topic-", "")));
+      voteHook.write(BigInt(topic.onChainTopicId));
     } else {
       await fetch("/api/arena/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "voteForTopic", topicId, weight: 100 }),
+        body: JSON.stringify({ action: "voteForTopic", topicId, address }),
       });
       if (selectedRound) {
         const t = await getTopicsByRound(selectedRound.id);
@@ -156,7 +160,7 @@ export default function ArenaPage() {
       await fetch("/api/arena/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "voteForTopic", topicId, weight: 100 }),
+        body: JSON.stringify({ action: "voteForTopic", topicId, address }),
       });
       if (selectedRound) {
         const t = await getTopicsByRound(selectedRound.id);
@@ -171,7 +175,7 @@ export default function ArenaPage() {
     if (isOnChain && isConnected) {
       pendingProposeData.current = { title: newTitle.trim(), description: newDescription.trim() };
       proposeHook.write(
-        BigInt(selectedRound.id.replace("round-", "")),
+        BigInt(selectedRound.onChainRoundId ?? 0),
         newTitle.trim(),
         newDescription.trim(),
       );
@@ -184,7 +188,7 @@ export default function ArenaPage() {
         body: JSON.stringify({
           action: "proposeTopic",
           roundId: selectedRound.id,
-          proposerId: "user-1",
+          address,
           title: newTitle.trim(),
           description: newDescription.trim(),
         }),
@@ -199,9 +203,21 @@ export default function ArenaPage() {
 
   // Sync DB after on-chain propose confirmation
   useEffect(() => {
-    if (!proposeHook.isSuccess || !selectedRound || !pendingProposeData.current) return;
+    if (!proposeHook.isSuccess || !proposeHook.receipt || !selectedRound || !pendingProposeData.current) return;
     const data = pendingProposeData.current;
     pendingProposeData.current = null;
+
+    // Decode TopicProposed event to extract onChainTopicId
+    let onChainTopicId: string | undefined;
+    for (const log of proposeHook.receipt.logs) {
+      try {
+        const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+        if (decoded.eventName === "TopicProposed") {
+          onChainTopicId = String((decoded.args as { topicId: bigint }).topicId);
+          break;
+        }
+      } catch { /* not our event */ }
+    }
 
     (async () => {
       await fetch("/api/arena/sync", {
@@ -210,9 +226,10 @@ export default function ArenaPage() {
         body: JSON.stringify({
           action: "proposeTopic",
           roundId: selectedRound.id,
-          proposerId: "user-1",
+          address,
           title: data.title,
           description: data.description,
+          onChainTopicId,
         }),
       });
       const t = await getTopicsByRound(selectedRound.id);

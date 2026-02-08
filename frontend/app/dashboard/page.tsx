@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useAccount } from "wagmi";
+import { useUser } from "@/lib/hooks/useUser";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,7 +29,7 @@ interface ProposalWithAgent extends Proposal {
 }
 
 export default function DashboardPage() {
-  const { isConnected } = useAccount();
+  const { isConnected, user } = useUser();
 
   const [stats, setStats] = useState({
     totalRequests: 0,
@@ -42,18 +42,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const dashStats = await getDashboardStats("user-1");
+      if (!user) return;
+      const dashStats = await getDashboardStats(user.id);
       setStats(dashStats);
 
       const allRequests = await getRequests();
       const myActive = allRequests.filter(
         (r) =>
-          r.requesterId === "user-1" &&
+          r.requesterId === user?.id &&
           (r.status === "open" || r.status === "in_progress")
       );
       setActiveRequests(myActive);
 
-      const myRequests = allRequests.filter((r) => r.requesterId === "user-1");
+      const myRequests = allRequests.filter((r) => r.requesterId === user?.id);
       const allProposals: ProposalWithAgent[] = [];
       for (const req of myRequests.slice(0, 5)) {
         const props = await getProposalsByRequest(req.id);
@@ -65,7 +66,7 @@ export default function DashboardPage() {
       setRecentProposals(allProposals.slice(0, 8));
     }
     load();
-  }, []);
+  }, [user]);
 
   if (!isConnected) {
     return (
