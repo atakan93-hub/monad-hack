@@ -1,4 +1,4 @@
-# TaskForge - Project Planning Document
+# AI Agent Outsourcing Platform - Planning Document
 
 > Hackathon MVP Planning Document
 > Created: 2026-02-07
@@ -8,28 +8,28 @@
 ## 1. Project Overview
 
 ### One-liner
-**A decentralized platform for outsourcing tasks to AI agents**
+**A decentralized platform where you can outsource tasks to AI agents**
 
-### Background & Problem
-- AI agent technology has advanced, but it's still difficult for everyday users to leverage agents
+### Background & Problem Statement
+- AI agent technology has advanced, but it's difficult for everyday users to leverage agents
 - There is no standardized method for verifying agent capabilities
-- Virtuals' ACP (Agent Commerce Protocol) has standardized agent-to-agent transactions, but a Human-to-Agent outsourcing platform is still missing
+- Virtuals' ACP (Agent Commerce Protocol) has protocolized agent-to-agent transactions, but a Human-to-Agent outsourcing platform is still missing
 
 ### Our Approach
-- **Product, not protocol** — focus on UX layer
+- Approach as a **product, not a protocol**
 - Community-driven governance (meme token voting)
 - Agent verification built into the Arena system
 - Designed for future ACP compatibility
 
 ### Target Users
 | User Type | Description |
-|-----------|-------------|
-| **Client** | Everyday users who want to delegate tasks but don't know how to operate AI agents directly |
-| **Agent Provider** | Operators of AI agents (e.g., OpenClaw bots) capable of performing tasks |
+|----------|------|
+| **Client** | Everyday users to those less familiar with AI/development. People who want to delegate tasks but don't know how to operate agents directly |
+| **Agent Provider** | People/bots operating AI agents like OpenClaw who can perform tasks |
 
 ### Tech Stack
 | Item | Choice | Reason |
-|------|--------|--------|
+|------|------|------|
 | **Blockchain** | Monad | High-performance EVM-compatible |
 | **Token** | ERC20 | Platform meme token + governance token |
 | **Agent** | OpenClaw bots | AI agents capable of real task execution |
@@ -40,32 +40,32 @@
 ## 2. Key Differentiators
 
 ### vs Virtuals ACP
-| | TaskForge | Virtuals ACP |
+| | Our Platform | Virtuals ACP |
 |---|---|---|
-| **Position** | Product (UX layer) | Protocol (infra) |
-| **Transaction** | Human → Agent (+ Agent ↔ Agent extensible) | Agent ↔ Agent |
+| **Position** | Product (UX layer) | Protocol (infrastructure) |
+| **Transaction Parties** | Human → Agent (+ Agent ↔ Agent extensible) | Agent ↔ Agent |
 | **Pricing** | Reverse auction (agents compete on bids) | Standard protocol |
-| **Trust** | Arena verification + reputation accumulation | Cryptographic verification + evaluation |
+| **Trust Building** | Arena verification + reputation accumulation | Cryptographic verification + evaluation phase |
 | **Chain** | Monad | Base-centric |
 
-### Our Strengths
+### Our Unique Strengths
 1. **Meme Token Governance**: Community votes to decide what tasks to create
 2. **Arena → Market Pipeline**: Only verified agents operate in the marketplace
 3. **Monad Native**: Fast transactions on a high-performance chain
 
 ---
 
-## 3. Platform Architecture
+## 3. Platform Structure
 
 ```
 ┌──────────────────────────────────────────────────────┐
 │              AI Agent Outsourcing Platform            │
 ├─────────────────────────┬────────────────────────────┤
-│      Arena              │       Marketplace          │
-│      (Competition)      │       (Reverse Auction)    │
+│      🏟️ Arena          │       🤝 Marketplace        │
+│   (Competition/Bounty)  │      (Reverse Auction)     │
 │                         │                            │
 │  • Community proposals  │  • Clients post requests   │
-│  • Token-weighted votes │  • Agents submit proposals │
+│  • Meme token voting    │  • Agents submit bids      │
 │  • Platform funds prize │  • Price competition       │
 │  • Winner earns rep/SBT │  • Escrow-secured deals    │
 │                         │                            │
@@ -79,14 +79,14 @@
 └──────────────────────────────────────────────────────┘
 ```
 
-### Synergy Between Modes
+### Synergy Between Two Modes
 ```
 ┌─────────────┐   Verification    ┌─────────────────┐
 │   Arena     │ ───────────────→  │   Marketplace   │
-│  (New Entry) │   Rep + SBT      │  (Revenue)      │
+│ (New Entry) │   Rep + SBT       │ (Revenue)       │
 └─────────────┘                   └─────────────────┘
       ↑                                   │
-      │       Track Record                │
+      │        Track Record               │
       └───────────────────────────────────┘
 ```
 
@@ -94,50 +94,51 @@
 
 ## 4. Mode Details
 
-### Arena (Competition / Bounty)
+### 🏟️ Mode 1: Arena (Competition/Bounty)
 
 **Purpose**
 - Verify new agents
 - Drive community engagement
-- Platform marketing / buzz
+- Platform marketing / buzz generation
 
 **Detailed Flow**
 ```
-[1] Topic Proposal
+[1] Round Opening (Admin)
+    └─ Admin creates a new round (weekly)
+    └─ Set duration, prize pool
+
+[2] Topic Proposals (Anyone)
     └─ Anyone can propose "I wish someone would build..."
     └─ e.g., "Twitter auto-summarizer bot", "NFT minting helper"
 
-[2] Community Voting
-    └─ Vote using meme tokens (platform ERC20)
-    └─ Periodic rounds (e.g., weekly)
-    └─ Top-voted topic selected
+[3] Topic Voting (Token Holders)
+    └─ Vote based on $FORGE holdings
+    └─ Top topic selected
 
-[3] Bounty Opens
-    └─ Platform sets prize pool
-    └─ Submission deadline set
-    └─ Agents apply to participate
-
-[4] Submission
-    └─ Agents perform the task
-    └─ Submit deliverables before deadline
+[4] Competition Development
+    └─ Agents develop the selected topic
+    └─ Submit deliverables within deadline
 
 [5] Judging & Rewards
-    └─ Judging: Community vote or admin (TBD)
+    └─ Judging method: **MVP: Admin selects winner** / Community vote judging (TBD - future enhancement)
     └─ Winner: Prize + reputation score + SBT badge
-    └─ Participants: Participation record (partial reputation)
+    └─ Participants: Participation record (partially reflected in reputation)
 ```
 
 **Key Mechanisms**
 | Element | Description |
-|---------|-------------|
+|------|------|
 | Topic Proposal | Open proposals, deduplication needed |
-| Voting | Token balance = voting power (governance) |
-| Prize | Funded from platform treasury (tokenomics TBD) |
+| Round Management | Admin creates rounds (duration, prize) |
+| Topic Proposal | Anyone can freely propose |
+| Topic Voting | **MVP**: Real-time `balanceOf()` check / **Enhancement (TBD)**: Time-weighted average |
+| Winner Selection | **MVP**: Admin selection / **Enhancement (TBD)**: Community vote judging |
+| Prize | Paid from platform treasury |
 | SBT | Different badges by win count / tier |
 
 ---
 
-### Marketplace (Reverse Auction)
+### 🤝 Mode 2: Marketplace (Reverse Auction)
 
 **Purpose**
 - Generate real outsourcing transactions
@@ -156,14 +157,14 @@
     └─ Explore request listings
     └─ Filter: category, budget, deadline
 
-[3] Submit Proposal (Agent)
+[3] Submit Bid (Agent)
     └─ Proposed price (reverse auction: lower = more competitive)
     └─ Estimated duration
-    └─ Approach / methodology description
+    └─ Work approach / methodology description
     └─ Portfolio link
 
 [4] Compare & Select (Client)
-    └─ Compare received proposals
+    └─ Compare received bids
     └─ Check agent profiles (reputation, SBT, completion rate)
     └─ Consider trust, not just price
 
@@ -191,7 +192,7 @@ Agent A: 180 tokens (high reputation)
 Agent B: 120 tokens (mid reputation)  ← best value
 Agent C: 150 tokens (low reputation)
 
-Client decision: price + reputation + portfolio combined
+Client decision criteria: price + reputation + portfolio combined
 ```
 
 ---
@@ -201,55 +202,55 @@ Client decision: price + reputation + portfolio combined
 ### The Agent Verification Problem
 > "Do we just accept anyone who says 'I have an agent'?"
 
-**Solution: Multi-layered Trust**
+**Solution: Multi-layered Trust Structure**
 
 | Layer | Method | Description |
-|-------|--------|-------------|
+|--------|------|------|
 | **Entry** | Arena participation | New agents prove skills in the Arena first |
 | **Track Record** | On-chain reputation | Completion count, success rate recorded on-chain |
 | **Badge** | SBT (ERC-5192) | Non-transferable badges issued on Arena wins |
-| **Skin in the Game** | Staking (future) | Token deposit, slashing on failure |
+| **Skin in the Game** | Staking **(TBD - future enhancement)** | Agents deposit tokens, slashing on failure/disputes |
 
-### Reputation Score (Example)
+### Reputation Score Composition (Example)
 ```
-Total Rep = (Arena Wins × 50) + (Market Completions × 10) + (Completion Rate Bonus)
+Total Reputation = (Arena Wins × 50) + (Market Completions × 10) + (Completion Rate Bonus)
 
 Example:
-- Arena wins: 2 → 100 pts
-- Market completions: 5 → 50 pts
-- 100% completion rate → +20 pts bonus
-- Total: 170 pts
+- Arena wins: 2 → 100 points
+- Market completions: 5 → 50 points
+- 100% completion rate → +20 points bonus
+- Total: 170 points
 ```
 
 ### SBT Badge Types (Example)
 | Badge | Condition |
-|-------|-----------|
-| Rookie | First Arena participation |
-| Contender | Arena Top 3 finish |
-| Champion | Arena winner |
-| Legend | 3+ Arena wins |
-| Trusted | 100% market completion rate (10+ deals) |
+|------|------|
+| 🥉 Rookie | First Arena participation |
+| 🥈 Contender | Arena Top 3 finish |
+| 🥇 Champion | Arena winner |
+| 💎 Legend | 3+ Arena wins |
+| ⭐ Trusted | 100% market completion rate (10+ deals) |
 
 ---
 
 ## 6. Terminology
 
-| Term (KR) | English | Meaning |
-|-----------|---------|---------|
-| 의뢰 | Request | Task posted by a client |
-| 견적 | Proposal / Bid | Agent's submission (price, duration, approach) |
-| 바운티 | Bounty | Public prize posted by platform in Arena |
-| 에이전트 | Agent | AI performing tasks (e.g., OpenClaw bots) |
-| 의뢰인 | Client | User delegating a task |
-| 역경매 | Reverse Auction | Buyer sets conditions, sellers compete on price |
-| 에스크로 | Escrow | Third-party (contract) holds funds, releases on condition |
-| SBT | Soulbound Token | Non-transferable NFT (proof of track record) |
+| Term (Korean) | English | Meaning |
+|------|------|------|
+| **의뢰** | Request | Task request posted by a client |
+| **견적** | Proposal/Bid | Agent's submission (price, duration, approach) |
+| **바운티** | Bounty | Public prize posted by platform in Arena |
+| **에이전트** | Agent | AI performing tasks (OpenClaw bots, etc.) |
+| **의뢰인** | Client | User delegating a task |
+| **역경매** | Reverse Auction | Buyer sets conditions, sellers compete on price |
+| **에스크로** | Escrow | Third-party (contract) holds funds, releases on condition |
+| **SBT** | Soulbound Token | Non-transferable NFT (proof of track record) |
 
 ---
 
 ## 7. Page Structure
 
-### Sitemap
+### Full Sitemap
 ```
 Home
 ├── Landing Page
@@ -257,20 +258,21 @@ Home
 │
 ├── Dashboard (after login)
 │   ├── Activity Summary
-│   ├── Active Requests / Proposals
+│   ├── Active Requests/Bids
 │   └── Notifications
 │
-├── Arena
-│   ├── Topic Proposals & Voting
-│   ├── Bounty List
-│   └── Bounty Details & Submissions
+├── 🏟️ Arena
+│   ├── Round List
+│   ├── Round Detail (Topic Proposals & Voting)
+│   ├── Competition Submissions List
+│   └── Admin: Round Management
 │
-├── Marketplace
+├── 🤝 Marketplace
 │   ├── Post Request (Client)
 │   ├── Request List (Browse)
-│   ├── Request Detail + Submit Proposal (Agent)
+│   ├── Request Detail + Submit Bid (Agent)
 │   ├── My Requests (Client)
-│   └── My Proposals (Agent)
+│   └── My Bids (Agent)
 │
 └── Profile
     └── Agent Profile (Reputation, SBT, Portfolio)
@@ -279,30 +281,30 @@ Home
 ### Page Descriptions
 
 | # | Page | Key Features | User |
-|---|------|-------------|------|
+|---|--------|----------|------|
 | 1 | Landing | Platform intro, Arena/Market CTAs | All |
-| 2 | Wallet | Monad wallet connection | All |
+| 2 | Wallet Connection | Monad wallet integration | All |
 | 3 | Dashboard | Activity summary, active items | Logged in |
-| 4 | Topic Proposals & Voting | Submit proposals, token voting | All |
-| 5 | Bounty List | Active/upcoming/completed bounties | All |
-| 6 | Bounty Detail | Requirements, submissions, results | All |
+| 4 | Round List | Active/upcoming/completed rounds | All |
+| 5 | Round Detail | Topic proposals, voting, submissions | All |
+| 6 | Round Management | Create rounds, select winners | Admin |
 | 7 | Post Request | New request form | Client |
 | 8 | Request List | Filter/search, card list | Agent |
-| 9 | Request Detail | Full info, proposal form | Agent |
-| 10 | My Requests | Posted requests, received proposals | Client |
-| 11 | My Proposals | Submitted proposals, progress | Agent |
+| 9 | Request Detail | Full info, bid submission form | Agent |
+| 10 | My Requests | Posted requests, received bids | Client |
+| 11 | My Bids | Submitted bids, progress | Agent |
 | 12 | Agent Profile | Reputation, SBT, portfolio | All |
 
 ---
 
 ## 8. Smart Contract Structure (MVP)
 
-### Contracts
+### Contract List
 | Contract | Role |
 |----------|------|
-| **Token.sol** | Platform ERC20 meme token |
-| **Governance.sol** | Arena topic voting |
-| **Escrow.sol** | Marketplace escrow |
+| **Token.sol** | Platform ERC20 meme token ($FORGE) |
+| **Arena.sol** | Round management + topic voting + winner selection |
+| **Escrow.sol** | Marketplace escrow + fees |
 | **Reputation.sol** | On-chain reputation score |
 | **SBTBadge.sol** | SBT badge issuance (ERC-5192) |
 
@@ -310,31 +312,35 @@ Home
 ```
 [Client] ──deposit()──→ [Escrow Contract] ──release()──→ [Agent]
                               │
-                              ├── Client approve → release
-                              └── Dispute (future: arbitration system)
+                              ├── Release on client approval
+                              └── Dispute (TBD - future enhancement: DAO arbitration system)
 ```
 
 ---
 
 ## 9. MVP Scope
 
-### Included (1-week target)
+### ✅ Included (1-week target)
 | Area | Scope |
-|------|-------|
+|------|------|
 | **Wallet** | Monad wallet connection |
 | **Arena** | 1 topic vote + 1 bounty round |
-| **Market** | Request → proposal → contract → completion flow |
+| **Market** | Request → bid → contract → completion basic flow |
 | **Contract** | Escrow (single payment) |
 | **Profile** | Reputation score + 1 SBT type |
 | **UI** | Wireframe-based basic design |
 
-### Excluded (Future)
+### ❌ Excluded (Future Enhancement — TBD)
 - Complex review/rating system
 - Real-time chat (replaced by form-based messages)
 - Multi-milestone payments
-- Dispute resolution / arbitration
+- Dispute resolution / arbitration system (DAO arbitration or admin judgment)
 - ACP protocol integration
 - Agent-to-Agent transactions
+- Staking/slashing mechanism
+- Time-weighted average voting snapshot
+- Community vote judging (winner selection)
+- Premium profile / featured placement
 
 ---
 
@@ -344,17 +350,20 @@ Home
 Phase 1 (Hackathon)
 └── MVP: Arena + Market basics
 
-Phase 2
-├── Dispute resolution system
+Phase 2 (TBD)
+├── Dispute resolution system (DAO arbitration)
 ├── Multi-milestone payments
+├── Staking/slashing mechanism
+├── Time-weighted average voting snapshot
 └── Category refinement
 
-Phase 3
+Phase 3 (TBD)
 ├── Agent-to-Agent transactions
 ├── Virtuals ACP compatibility
-└── Cross-chain support
+├── Cross-chain support
+└── Premium profile / featured placement
 
-Phase 4
+Phase 4 (TBD)
 └── Professional agent guilds / DAOs
 ```
 
@@ -365,13 +374,13 @@ Phase 4
 - [Virtuals Agent Commerce Protocol (ACP)](https://whitepaper.virtuals.io/about-virtuals/agent-commerce-protocol-acp)
   - Standardized protocol for agent-to-agent transactions
   - Smart contract escrow + cryptographic verification
-  - Our platform is a superset; future ACP integration possible
+  - Our platform is compatible; future integration possible
 
 ---
 
 ## 12. Branding
 
-### Basics
+### Basic Information
 - **Platform Name**: TaskForge
 - **Token Name**: Forge Token
 - **Ticker**: $FORGE
@@ -380,9 +389,9 @@ Phase 4
 > "Forge Intelligence. Automate Tasks."
 > "Crafting the Future of Work with AI & Web3"
 
-### Color Palette
+### Color Palette (Option C: Hybrid)
 | Purpose | Color | HEX |
-|---------|-------|-----|
+|------|------|-----|
 | **Primary** | Amber Orange | `#F59E0B` |
 | **Secondary** | Dark Purple | `#1E1B4B` |
 | **Accent** | Cyber Blue | `#3B82F6` |
@@ -390,7 +399,7 @@ Phase 4
 | **Text** | White | `#FAFAFA` |
 
 ### Visual Concept
-- Anvil + Hammer (Forge symbolism)
+- Forge hammer + anvil (Forge symbolism)
 - Digital circuits / data streams
 - Amber orange glow + cyber blue sparks
 - Dark mode base, premium crypto startup aesthetic
@@ -401,27 +410,27 @@ Phase 4
 
 ### Frontend
 | Item | Choice |
-|------|--------|
+|------|------|
 | Framework | Next.js 15 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 |
-| Responsive | No (Desktop only) |
+| Responsive | ❌ (Desktop only) |
 
-### Wallet
+### Wallet Connection
 ```
 RainbowKit + wagmi v2 + viem
 ```
 
 ### Backend
 | Item | Choice |
-|------|--------|
+|------|------|
 | API | Next.js API Routes |
 | DB | Supabase (PostgreSQL) |
 | Auth | Wallet signature (SIWE) |
 
 ### Blockchain
 | Item | Choice |
-|------|--------|
+|------|------|
 | Chain | Monad (Testnet) |
 | Contracts | Solidity |
 | Token | $FORGE (ERC20) |
@@ -450,14 +459,14 @@ RainbowKit + wagmi v2 + viem
 
 ### users
 | Column | Type | Description |
-|--------|------|-------------|
+|------|------|------|
 | id | uuid | PK |
 | wallet_address | string | Wallet address |
 | created_at | timestamp | Created date |
 
-### agents
+### agents (Agent profiles)
 | Column | Type | Description |
-|--------|------|-------------|
+|------|------|------|
 | id | uuid | PK |
 | owner_id | uuid | FK → users |
 | name | string | Agent name |
@@ -465,9 +474,9 @@ RainbowKit + wagmi v2 + viem
 | reputation_score | int | Reputation score |
 | created_at | timestamp | Created date |
 
-### requests
+### requests (Requests)
 | Column | Type | Description |
-|--------|------|-------------|
+|------|------|------|
 | id | uuid | PK |
 | client_id | uuid | FK → users |
 | title | string | Title |
@@ -475,36 +484,92 @@ RainbowKit + wagmi v2 + viem
 | budget_min | int | Minimum budget |
 | budget_max | int | Maximum budget |
 | deadline | timestamp | Deadline |
-| status | enum | open / in_progress / completed |
+| status | enum | open/in_progress/completed |
 | created_at | timestamp | Created date |
 
-### proposals
+### proposals (Bids)
 | Column | Type | Description |
-|--------|------|-------------|
+|------|------|------|
 | id | uuid | PK |
 | request_id | uuid | FK → requests |
 | agent_id | uuid | FK → agents |
 | price | int | Proposed price |
 | duration | int | Estimated duration (days) |
 | description | text | Proposal description |
-| status | enum | pending / accepted / rejected |
+| status | enum | pending/accepted/rejected |
 | created_at | timestamp | Created date |
 
-### bounties
+### rounds (Arena rounds)
 | Column | Type | Description |
-|--------|------|-------------|
+|------|------|------|
 | id | uuid | PK |
-| title | string | Title |
-| description | text | Description |
-| prize | int | Prize amount |
-| deadline | timestamp | Deadline |
-| status | enum | voting / active / completed |
+| round_number | int | Round number (1, 2, 3...) |
+| prize | int | Prize pool |
+| status | enum | proposing/voting/active/completed |
+| selected_topic_id | uuid | FK → topics (nullable) |
 | winner_agent_id | uuid | FK → agents (nullable) |
+| created_at | timestamp | Created date |
+
+### topics (Topic proposals)
+| Column | Type | Description |
+|------|------|------|
+| id | uuid | PK |
+| round_id | uuid | FK → rounds |
+| proposer_id | uuid | FK → users |
+| title | string | Topic title |
+| description | text | Detailed description |
+| vote_count | int | Accumulated vote weight |
+| created_at | timestamp | Created date |
+
+### entries (Competition submissions)
+| Column | Type | Description |
+|------|------|------|
+| id | uuid | PK |
+| round_id | uuid | FK → rounds |
+| agent_id | uuid | FK → agents |
+| repo_url | string | GitHub repo link (required) |
+| demo_url | string | Deployed demo link (nullable) |
+| description | text | Approach description (required) |
 | created_at | timestamp | Created date |
 
 ---
 
-## 15. UI Reference (Concept Art)
+## 15. Tokenomics & Business Model
+
+### $FORGE Token Issuance
+- **Issuance Method**: Meme bonding curve (via NadFun, etc.) to mint as meme coin
+- **Standard**: ERC20
+- **Supply**: Determined by bonding curve and market
+
+### Token Utility
+| Use Case | Description |
+|------|------|
+| **Arena Voting** | $FORGE holdings = voting power (governance) |
+| **Market Payment** | Clients deposit $FORGE in escrow |
+| **Arena Prize** | Winner agents receive $FORGE |
+| **Fees** | Transaction fees partially accumulated in treasury |
+
+### Revenue Model (BM)
+| Revenue Source | Phase | Description |
+|--------|------|------|
+| **Fees** | MVP | Transaction fees on escrow completion |
+| **Arena Entry Fee** | MVP (optional) | Small $FORGE fee to participate in bounties |
+| **Premium Profile** | TBD - Future enhancement | Agent profile featured placement |
+
+### Prize Funding
+- MVP: Paid from platform treasury (initial token pool)
+- Future enhancement: Automatically funded from fee pool
+
+### MVP Scope
+- ✅ Issue $FORGE via meme bonding curve
+- ✅ Escrow payment
+- ✅ Arena voting
+- ❌ Staking/slashing (future enhancement)
+- ❌ Complex distribution logic (future enhancement)
+
+---
+
+## 16. UI Reference (Concept Art)
 
 ### Landing Page
 - Hero section: Glowing hammer + anvil visual
@@ -512,10 +577,19 @@ RainbowKit + wagmi v2 + viem
 - CTAs: Explore Agents / Build Your Task / Connect Wallet
 
 ### Arena Page
-- Tournament bracket visualization
-- Agent vs agent matchups
-- Right sidebar: Current Battles list
-- Vote button (Cast Your Vote)
+- Top: Current round banner (Round N - status badge)
+- Round card list (number, prize, status)
+- Round detail (tab structure):
+  - [Topic Proposals] Proposal card list + proposal form button
+  - [Voting] Vote progress bars per topic + vote button
+  - [Competition] Submission cards (repo link, demo, description)
+  - [Results] Winner profile + prize information
+
+### Admin Page
+- Round creation form (enter prize)
+- Status transition buttons (proposing → voting → active → completed)
+- Topic confirmation (auto-display top voted topic)
+- Winner selection dropdown
 
 ### Marketplace Page
 - Left: Filter sidebar
@@ -535,9 +609,9 @@ RainbowKit + wagmi v2 + viem
 
 ---
 
-## 16. TODO
+## 17. TODO
 
-### Planning
+### Planning ✅
 - [x] Platform concept definition
 - [x] User flow design
 - [x] Page structure
@@ -559,6 +633,37 @@ RainbowKit + wagmi v2 + viem
 - [ ] Smart contract development
 - [ ] Page implementation
 
+### Design
+- [ ] Wireframing
+- [ ] UI design
+
+### Agent Integration (AI Agent Integration)
+- [ ] `llms.txt` — Platform overview, API endpoints, usage guide in LLM-readable format
+- [ ] `SKILL.md` — Specification for agents like OpenClaw to register TaskForge skill (request browsing, bid submission, completion flow)
+- [ ] `AGENTS.md` — Agent registration/authentication guide, API key issuance, wallet integration methods
+- [ ] API SDK / Wrapper — Simple client for agents to call directly via code
+- [ ] Maltbook registration prep — Project README, demo video, skill package
+
+### Development
+- [ ] Smart contract design refinement
+- [ ] Backend API design
+- [ ] Frontend implementation
+
 ---
 
-*Last updated: 2026-02-07*
+## Appendix: Discussion History
+
+### Q: What's the outsourcing model?
+**A: Two parallel modes**
+1. Arena: Community votes on topics → Platform prizes → Agents compete
+2. Market: Clients post requests → Agents reverse-auction → Selection then execution
+
+### Q: How do we verify agents?
+**A: Prove skills in Arena → Earn reputation + SBT → Use as trust score in Market**
+
+### Q: Relationship with Virtuals ACP?
+**A: ACP is protocol (infrastructure), we are product (UX). Compatible but differentiated approach. Future ACP integration possible.**
+
+---
+
+*Last updated: 2026-02-08*
