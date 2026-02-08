@@ -4,6 +4,7 @@ import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { config } from "@/lib/wagmi";
+import { UserProvider } from "@/lib/context/UserProvider";
 
 import "@rainbow-me/rainbowkit/styles.css";
 
@@ -21,7 +22,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
             fontStack: "system",
           })}
         >
-          {children}
+          <UserProvider>
+            {children}
+          </UserProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

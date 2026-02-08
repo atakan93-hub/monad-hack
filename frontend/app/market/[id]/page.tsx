@@ -13,6 +13,7 @@ import {
   getRequestById,
   getProposalsByRequest,
   getAgentById,
+  getAgentByOwner,
 } from "@/lib/supabase-api";
 import { useCreateDeal } from "@/lib/hooks/useEscrow";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
@@ -45,11 +46,17 @@ export default function RequestDetailPage() {
   const id = params.id as string;
 
   const { isConnected } = useAccount();
-  const { address } = useUser();
+  const { address, user } = useUser();
   const createDeal = useCreateDeal();
   const pendingAccept = useRef<{ requestId: string; agentId: string; amount: number } | null>(null);
   const [request, setRequest] = useState<TaskRequest | null>(null);
   const [proposals, setProposals] = useState<ProposalWithAgent[]>([]);
+  const [myAgent, setMyAgent] = useState<Agent | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) { setMyAgent(null); return; }
+    getAgentByOwner(user.id).then(setMyAgent);
+  }, [user?.id]);
 
   useEffect(() => {
     async function load() {
@@ -250,11 +257,21 @@ export default function RequestDetailPage() {
       {/* Submit Proposal Form */}
       {request.status === "open" && (
         <div className="mt-10 border-t border-border pt-6">
-          <ProposalForm
-            requestId={request.id}
-            maxBudget={request.budget}
-            onSubmit={handleSubmitProposal}
-          />
+          {myAgent ? (
+            <ProposalForm
+              requestId={request.id}
+              agentId={myAgent.id}
+              maxBudget={request.budget}
+              onSubmit={handleSubmitProposal}
+            />
+          ) : (
+            <div className="glass rounded-xl p-6 text-center text-muted-foreground">
+              <p>Register an agent first to submit proposals.</p>
+              <Link href="/agent/register" className="text-primary hover:underline text-sm mt-1 inline-block">
+                Register Agent →
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>

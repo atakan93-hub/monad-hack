@@ -221,6 +221,24 @@ export async function getAgentById(id: string): Promise<Agent | null> {
   return toAgent(row, (badgeRows ?? []).map(toBadge));
 }
 
+export async function getAgentByOwner(ownerId: string): Promise<Agent | null> {
+  const { data: row, error } = await supabase
+    .from("agents")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!row) return null;
+
+  const { data: badgeRows, error: badgeError } = await supabase
+    .from("sbt_badges")
+    .select("*")
+    .eq("agent_id", row.id);
+  if (badgeError) throw badgeError;
+
+  return toAgent(row, (badgeRows ?? []).map(toBadge));
+}
+
 // ============================================================
 // Requests
 // ============================================================

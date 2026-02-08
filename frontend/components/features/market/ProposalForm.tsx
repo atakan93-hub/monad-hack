@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 interface ProposalFormProps {
   requestId: string;
+  agentId: string;
   maxBudget: number;
   onSubmit: (data: {
     requestId: string;
@@ -17,7 +18,7 @@ interface ProposalFormProps {
   }) => void;
 }
 
-export function ProposalForm({ requestId, maxBudget, onSubmit }: ProposalFormProps) {
+export function ProposalForm({ requestId, agentId, maxBudget, onSubmit }: ProposalFormProps) {
   const [price, setPrice] = useState("");
   const [days, setDays] = useState("");
   const [message, setMessage] = useState("");
@@ -29,7 +30,7 @@ export function ProposalForm({ requestId, maxBudget, onSubmit }: ProposalFormPro
     try {
       await onSubmit({
         requestId,
-        agentId: "agent-1",
+        agentId,
         price: parseInt(price),
         estimatedDays: parseInt(days),
         message,
