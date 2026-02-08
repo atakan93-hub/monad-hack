@@ -15,12 +15,14 @@ export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed top-0 w-full z-40 bg-background/80 backdrop-blur-md border-b border-border">
+    <nav className="fixed top-0 w-full z-40 glass border-b border-white/[0.06]"
+         style={{ backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link
           href="/"
-          className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight"
+          className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight
+                     transition-all duration-300 hover:drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]"
         >
           <div className="w-8 h-8 rounded-lg overflow-hidden relative shrink-0">
             <Image
@@ -39,19 +41,25 @@ export function Navbar() {
 
         {/* Navigation */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`text-sm transition-colors ${
-                pathname === href || pathname?.startsWith(href + "/")
-                  ? "text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
+          {navLinks.map(({ href, label }) => {
+            const isActive = pathname === href || pathname?.startsWith(href + "/");
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`relative text-sm transition-colors py-1 ${
+                  isActive
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {label}
+                {isActive && (
+                  <span className="absolute -bottom-[1.125rem] left-0 right-0 h-0.5 bg-primary rounded-full" />
+                )}
+              </Link>
+            );
+          })}
         </div>
 
         {/* Wallet connection */}

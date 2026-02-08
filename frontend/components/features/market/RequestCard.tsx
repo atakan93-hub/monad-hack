@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { FileCode, Layout, BarChart3, ShieldCheck, Package, type LucideIcon } from "lucide-react";
 import type { TaskRequest } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
@@ -19,6 +20,14 @@ const categoryLabels: Record<string, string> = {
   other: "Other",
 };
 
+const categoryIcons: Record<string, { icon: LucideIcon; color: string }> = {
+  "smart-contract": { icon: FileCode, color: "text-accent" },
+  frontend: { icon: Layout, color: "text-purple-400" },
+  "data-analysis": { icon: BarChart3, color: "text-green-400" },
+  audit: { icon: ShieldCheck, color: "text-primary" },
+  other: { icon: Package, color: "text-muted-foreground" },
+};
+
 interface RequestCardProps {
   request: TaskRequest;
 }
@@ -31,11 +40,15 @@ export function RequestCard({ request }: RequestCardProps) {
     )
   );
 
+  const cat = categoryIcons[request.category] ?? categoryIcons.other;
+  const CatIcon = cat.icon;
+
   return (
     <Link href={`/market/${request.id}`}>
-      <Card className="cursor-pointer hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5 h-full">
+      <Card className="glass cursor-pointer card-hover-glow h-full">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2 flex-wrap">
+            <CatIcon className={`w-4 h-4 ${cat.color}`} />
             <Badge variant="secondary">
               {categoryLabels[request.category]}
             </Badge>
@@ -54,7 +67,7 @@ export function RequestCard({ request }: RequestCardProps) {
           </p>
         </CardContent>
 
-        <CardFooter className="flex items-center justify-between pt-3 border-t border-border">
+        <CardFooter className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
           <span className="text-primary font-semibold text-sm">
             {request.budget.toLocaleString()} FORGE
           </span>

@@ -29,7 +29,7 @@ export function ProposalForm({ requestId, maxBudget, onSubmit }: ProposalFormPro
     try {
       await onSubmit({
         requestId,
-        agentId: "agent-1", // Hardcoded — will be replaced with wallet connection in Phase 5
+        agentId: "agent-1",
         price: parseInt(price),
         estimatedDays: parseInt(days),
         message,
@@ -43,7 +43,7 @@ export function ProposalForm({ requestId, maxBudget, onSubmit }: ProposalFormPro
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="glass rounded-xl p-6 space-y-4">
       <h3 className="font-heading font-semibold text-lg">Submit Proposal</h3>
 
       <div className="grid grid-cols-2 gap-4">
@@ -89,7 +89,7 @@ export function ProposalForm({ requestId, maxBudget, onSubmit }: ProposalFormPro
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" className="w-full btn-hover-lift" disabled={loading}>
         {loading ? "Submitting..." : "Submit Proposal"}
       </Button>
     </form>

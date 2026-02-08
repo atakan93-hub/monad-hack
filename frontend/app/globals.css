@@ -52,18 +52,18 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* TaskForge dark-only theme — dark values applied directly to :root */
+/* TaskForge dark-only theme — glassmorphism + cyan accent */
 :root {
   --radius: 0.625rem;
 
-  /* Core: deep dark background */
-  --background: #09090B;
+  /* Core: deeper dark background */
+  --background: #0a0a0f;
   --foreground: #FAFAFA;
 
-  /* Card / Popover: surface tone */
-  --card: #18181B;
+  /* Card / Popover: glassmorphism base */
+  --card: rgba(255, 255, 255, 0.03);
   --card-foreground: #FAFAFA;
-  --popover: #18181B;
+  --popover: rgba(255, 255, 255, 0.05);
   --popover-foreground: #FAFAFA;
 
   /* Primary: amber */
@@ -78,21 +78,21 @@
   --muted: #27272A;
   --muted-foreground: #A1A1AA;
 
-  /* Accent: cyber blue */
-  --accent: #3B82F6;
+  /* Accent: cyan/teal */
+  --accent: #06B6D4;
   --accent-foreground: #FAFAFA;
 
   /* Destructive */
   --destructive: #EF4444;
 
   /* Border / Input / Ring */
-  --border: #27272A;
-  --input: #27272A;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
   --ring: #F59E0B;
 
   /* Chart colors */
   --chart-1: #F59E0B;
-  --chart-2: #3B82F6;
+  --chart-2: #06B6D4;
   --chart-3: #10B981;
   --chart-4: #8B5CF6;
   --chart-5: #EC4899;
@@ -104,17 +104,17 @@
   --sidebar-primary-foreground: #09090B;
   --sidebar-accent: #1E1B4B;
   --sidebar-accent-foreground: #FAFAFA;
-  --sidebar-border: #27272A;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #F59E0B;
 }
 
 /* .dark class identical (dark-only app) */
 .dark {
-  --background: #09090B;
+  --background: #0a0a0f;
   --foreground: #FAFAFA;
-  --card: #18181B;
+  --card: rgba(255, 255, 255, 0.03);
   --card-foreground: #FAFAFA;
-  --popover: #18181B;
+  --popover: rgba(255, 255, 255, 0.05);
   --popover-foreground: #FAFAFA;
   --primary: #F59E0B;
   --primary-foreground: #09090B;
@@ -122,14 +122,14 @@
   --secondary-foreground: #FAFAFA;
   --muted: #27272A;
   --muted-foreground: #A1A1AA;
-  --accent: #3B82F6;
+  --accent: #06B6D4;
   --accent-foreground: #FAFAFA;
   --destructive: #EF4444;
-  --border: #27272A;
-  --input: #27272A;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
   --ring: #F59E0B;
   --chart-1: #F59E0B;
-  --chart-2: #3B82F6;
+  --chart-2: #06B6D4;
   --chart-3: #10B981;
   --chart-4: #8B5CF6;
   --chart-5: #EC4899;
@@ -139,7 +139,7 @@
   --sidebar-primary-foreground: #09090B;
   --sidebar-accent: #1E1B4B;
   --sidebar-accent-foreground: #FAFAFA;
-  --sidebar-border: #27272A;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: #F59E0B;
 }
 
@@ -157,25 +157,95 @@
   color: #FAFAFA;
 }
 
+/* === Glassmorphism === */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 /* === Glow Effects === */
 .glow-amber {
   box-shadow: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 60px rgba(245, 158, 11, 0.1);
-}
-
-.glow-blue {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 60px rgba(59, 130, 246, 0.1);
 }
 
 .glow-amber-sm {
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
 }
 
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3), 0 0 60px rgba(6, 182, 212, 0.1);
+}
+
+.glow-cyan-sm {
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+}
+
 /* === Gradient Text === */
 .text-gradient-amber {
-  background: linear-gradient(135deg, #F59E0B, #3B82F6);
+  background: linear-gradient(135deg, #F59E0B, #06B6D4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #06B6D4, #8B5CF6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === Hero Gradient === */
+.bg-gradient-hero {
+  background: radial-gradient(ellipse at 20% 50%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, 0.06) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 100%, rgba(30, 27, 75, 0.3) 0%, transparent 60%);
+}
+
+/* === Circuit Pattern Overlay === */
+.circuit-pattern {
+  position: relative;
+}
+
+.circuit-pattern::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(6, 182, 212, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 182, 212, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* === Skeleton Loader === */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius);
 }
 
 /* === Animations === */
@@ -210,7 +280,18 @@
   transition: all 0.3s ease;
 }
 .card-hover-glow:hover {
-  border-color: rgba(245, 158, 11, 0.4);
-  box-shadow: 0 0 20px rgba(245, 158, 11, 0.1), 0 4px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(6, 182, 212, 0.3);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.08), 0 4px 20px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
+}
+
+/* === Button Hover Enhancement === */
+.btn-hover-lift {
+  transition: all 0.2s ease;
+}
+.btn-hover-lift:hover {
+  transform: scale(1.02);
+}
+.btn-hover-lift:active {
+  transform: scale(0.98);
 }
