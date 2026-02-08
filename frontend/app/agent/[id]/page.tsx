@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AgentProfile } from "@/components/features/agent/AgentProfile";
 import { AgentStats } from "@/components/features/agent/AgentStats";
-import { getAgentById, getRequests } from "@/lib/mock-api";
+import { getAgentById, getRequests } from "@/lib/supabase-api";
 import type { Agent, TaskRequest } from "@/lib/types";
 
 const tierColors: Record<string, string> = {

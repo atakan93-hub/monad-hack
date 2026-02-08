@@ -15,7 +15,7 @@ import {
   getAgentById,
   submitProposal,
   updateProposalStatus,
-} from "@/lib/mock-api";
+} from "@/lib/supabase-api";
 import { useCreateDeal } from "@/lib/hooks/useEscrow";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import type { TaskRequest, Proposal, Agent } from "@/lib/types";

@@ -22,7 +22,7 @@ import {
   voteForTopic,
   proposeTopic,
   getAgentById,
-} from "@/lib/mock-api";
+} from "@/lib/supabase-api";
 import { useVoteForTopic, useProposeTopic } from "@/lib/hooks/useArena";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import type { Round, Topic, ArenaEntry, RoundStatus } from "@/lib/types";

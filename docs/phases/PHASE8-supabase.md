@@ -1,4 +1,4 @@
-# Phase A: Supabase DB + API
+# Phase 8: Supabase DB + API ✅ COMPLETE
 
 > Replace mock-api.ts's 25 functions with real Supabase-based DB API
 
@@ -7,12 +7,12 @@
 ## Work Order
 
 ```
-A.1 Create Supabase project and setup
-A.2 Create 9 table schemas (RLS + RPC)
-A.3 Create 6 new files
-A.4 Implement supabase-api.ts (25 functions)
-A.5 Replace import paths (6 files)
-A.6 Seed data and verify
+8-1 Create Supabase project and setup         ✅
+8-2 Create 9 table schemas (RLS + RPC)        ✅ (text PKs, not UUID)
+8-3 Create 6 new files                        ✅
+8-4 Implement supabase-api.ts (25 functions)   ✅
+8-5 Replace import paths (5 page files)        ✅
+8-6 Seed data and verify                       ✅
 ```
 
 ---
@@ -870,17 +870,17 @@ npx tsx lib/seed.ts
 
 ## Completion Criteria
 
-- [ ] Supabase project created (URL + anon key obtained)
-- [ ] 9 table schemas created (SQL Editor)
-- [ ] increment_votes RPC function created
-- [ ] RLS policies applied (public read/write)
-- [ ] 6 new files created
-- [ ] supabase-api.ts 25 functions implemented
-- [ ] 6 page files import paths replaced
-- [ ] useUser() hook applied (6 pages)
-- [ ] Seed data injected
-- [ ] All pages display Supabase data
-- [ ] `npm run build` 0 errors
+- [x] Supabase project created (URL + anon key obtained)
+- [x] 9 table schemas created (SQL Editor) — text PKs instead of UUID for mock-data compatibility
+- [x] increment_votes RPC function created
+- [x] RLS policies applied (public read/write)
+- [x] 6 new files created
+- [x] supabase-api.ts 25 functions implemented (inline Row types, untyped client)
+- [x] 5 page files import paths replaced (mock-api → supabase-api)
+- [x] useUser hook created (auto-register on wallet connect)
+- [x] Seed data injected (5 users, 6 agents, 7 badges, 6 requests, 12 proposals, 4 rounds, 8 topics, 6 entries, 3 escrows)
+- [x] All pages display Supabase data
+- [x] `npm run build` 0 errors
 
 ---
 

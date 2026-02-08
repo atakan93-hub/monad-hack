@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getRequests, createRequest } from "@/lib/mock-api";
+import { getRequests, createRequest } from "@/lib/supabase-api";
 import type { TaskRequest, RequestStatus, RequestCategory } from "@/lib/types";
 
 export default function MarketPage() {

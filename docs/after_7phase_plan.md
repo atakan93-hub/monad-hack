@@ -14,9 +14,15 @@ Phase 10: Full UI Redesign         ──┘
 
 8/9/10 can be executed in parallel independently. 11 proceeds after 8+9 completion.
 
+### Status
+- **Phase 8**: ✅ COMPLETE
+- **Phase 9**: ✅ COMPLETE
+- **Phase 10**: Pending
+- **Phase 11**: Pending (blocked by 8+9, now unblocked)
+
 ---
 
-## Phase 8: Supabase DB + API
+## Phase 8: Supabase DB + API ✅
 
 ### 8-1. Create Supabase Project
 - Create free project at supabase.com
@@ -69,30 +75,21 @@ Phase 10: Full UI Redesign         ──┘
 
 ---
 
-## Phase 9: Contract Testnet Deployment
+## Phase 9: Contract Testnet Deployment ✅
 
-### 9-1. MockToken Deployment Script
-- **New file**: `contract/script/DeployMockToken.s.sol`
-- Deploy MockToken on testnet first (FORGE token substitute)
-- Replace with actual FORGE address when user provides it later
+### 9-1. Token
+- MockToken NOT needed — existing ERC20+permit token (ARENA) used as FORGE token
+- Address: `0x0bA5E04470Fe327AC191179Cf6823E667B007777`
 
-### 9-2. Execute Deployment
-```bash
-# Deploy MockToken
-forge script script/DeployMockToken.s.sol --rpc-url https://testnet-rpc.monad.xyz --broadcast
+### 9-2. Deployed Contracts
+- Escrow: `0x75EbFEBFc7c105772872EEf717E9aa30fC345d79`
+- Arena: `0xf37058ee31b4434740DED6b22A5992F447cc527c`
+- Treasury: `0x7c0fC790D03DD82f54030420A109a2A8D53a5888`
+- RPC: `https://testnet-rpc.monad.xyz`
 
-# Deploy Escrow + Arena (env: PRIVATE_KEY, FORGE_TOKEN, TREASURY, FEE_RATE=250)
-forge script script/Deploy.s.sol --rpc-url https://testnet-rpc.monad.xyz --broadcast
-```
-
-### 9-3. Update Addresses
-- **Modify**: `frontend/lib/contracts/addresses.ts` — placeholder → actual deployment addresses
-- After this, `isOnChain` check becomes true → activate wagmi hooks
-
-### 9-4. Verification
-- Check contracts on block explorer
-- MockToken mint → distribute tokens to test accounts
-- Verify Arena.admin() == deployer address
+### 9-3. Updated Addresses
+- `frontend/lib/contracts/addresses.ts` — placeholder → actual deployed addresses
+- wagmi hooks now make real on-chain calls
 
 ---
 
@@ -220,7 +217,7 @@ Reuse existing hooks: useCreateRound, useAdvanceRound, useSelectWinner from `use
 ### New Files (10)
 | File | Phase |
 |------|-------|
-| `contract/script/DeployMockToken.s.sol` | 9 |
+| ~~`contract/script/DeployMockToken.s.sol`~~ | 9 (not needed — existing token used) |
 | `frontend/.env.local` | 8 |
 | `frontend/lib/supabase.ts` | 8 |
 | `frontend/lib/database.types.ts` | 8 |

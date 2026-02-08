@@ -13,7 +13,7 @@ import {
   getRequests,
   getProposalsByRequest,
   getAgentById,
-} from "@/lib/mock-api";
+} from "@/lib/supabase-api";
 import type { TaskRequest, Proposal, Agent } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
