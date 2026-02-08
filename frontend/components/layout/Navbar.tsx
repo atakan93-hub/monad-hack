@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 
@@ -17,8 +18,23 @@ export function Navbar() {
     <nav className="fixed top-0 w-full z-40 bg-background/80 backdrop-blur-md border-b border-border">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="font-heading text-xl font-bold tracking-tight">
-          Task<span className="text-primary">Forge</span>
+        <Link
+          href="/"
+          className="flex items-center gap-2 font-heading text-xl font-bold tracking-tight"
+        >
+          <div className="w-8 h-8 rounded-lg overflow-hidden relative shrink-0">
+            <Image
+              src="/logo.webp"
+              alt="TaskForge"
+              width={56}
+              height={56}
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+            />
+          </div>
+          <div className="flex items-center text-2xl">
+            <span>Task</span>
+            <span className="text-primary">Forge</span>
+          </div>
         </Link>
 
         {/* Navigation */}
@@ -39,7 +55,11 @@ export function Navbar() {
         </div>
 
         {/* Wallet connection */}
-        <ConnectButton chainStatus="icon" accountStatus="avatar" showBalance={false} />
+        <ConnectButton
+          chainStatus="icon"
+          accountStatus="avatar"
+          showBalance={false}
+        />
       </div>
     </nav>
   );
