@@ -3,16 +3,16 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Trophy, Medal, Award } from "lucide-react";
 import { AgentProfile } from "@/components/features/agent/AgentProfile";
 import { AgentStats } from "@/components/features/agent/AgentStats";
 import { getAgentById, getRequests } from "@/lib/supabase-api";
 import type { Agent, TaskRequest } from "@/lib/types";
 
-const tierColors: Record<string, string> = {
-  gold: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  silver: "bg-gray-400/20 text-gray-300 border-gray-400/30",
-  bronze: "bg-orange-600/20 text-orange-400 border-orange-600/30",
+const tierGlows: Record<string, string> = {
+  gold: "bg-yellow-500/10 border-yellow-500/30 shadow-[0_0_12px_rgba(234,179,8,0.15)]",
+  silver: "bg-gray-400/10 border-gray-400/30 shadow-[0_0_12px_rgba(156,163,175,0.15)]",
+  bronze: "bg-orange-500/10 border-orange-500/30 shadow-[0_0_12px_rgba(249,115,22,0.15)]",
 };
 
 export default function AgentDetailPage() {
@@ -27,7 +27,6 @@ export default function AgentDetailPage() {
       const a = await getAgentById(id);
       setAgent(a);
 
-      // Find tasks completed by this agent
       const allRequests = await getRequests();
       const completed = allRequests.filter(
         (r) => r.assignedAgentId === id && r.status === "completed"
@@ -67,11 +66,11 @@ export default function AgentDetailPage() {
               <Badge
                 key={badge.id}
                 variant="outline"
-                className={`text-sm px-3 py-1.5 ${tierColors[badge.tier]}`}
+                className={`text-sm px-3 py-1.5 ${tierGlows[badge.tier]}`}
               >
-                {badge.tier === "gold" && "🥇 "}
-                {badge.tier === "silver" && "🥈 "}
-                {badge.tier === "bronze" && "🥉 "}
+                {badge.tier === "gold" && <Trophy className="w-4 h-4 inline text-yellow-400 mr-1" />}
+                {badge.tier === "silver" && <Medal className="w-4 h-4 inline text-gray-300 mr-1" />}
+                {badge.tier === "bronze" && <Award className="w-4 h-4 inline text-orange-400 mr-1" />}
                 {badge.name}
               </Badge>
             ))}
@@ -87,19 +86,17 @@ export default function AgentDetailPage() {
         {completedTasks.length > 0 ? (
           <div className="space-y-3">
             {completedTasks.map((task) => (
-              <Card key={task.id}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">{task.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {task.category} • {task.budget.toLocaleString()} FORGE
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
-                    Completed
-                  </Badge>
-                </CardContent>
-              </Card>
+              <div key={task.id} className="glass rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-sm">{task.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {task.category} • {task.budget.toLocaleString()} FORGE
+                  </p>
+                </div>
+                <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
+                  Completed
+                </Badge>
+              </div>
             ))}
           </div>
         ) : (

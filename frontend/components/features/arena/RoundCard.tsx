@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Round } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
-  proposing: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  proposing: "bg-accent/20 text-accent border-accent/30",
   voting: "bg-purple-500/20 text-purple-400 border-purple-500/30",
   active: "bg-primary/20 text-primary border-primary/30",
   completed: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -18,6 +18,13 @@ const statusLabels: Record<string, string> = {
   completed: "Completed",
 };
 
+const statusGlows: Record<string, string> = {
+  proposing: "hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]",
+  voting: "hover:shadow-[0_0_20px_rgba(139,92,246,0.15)]",
+  active: "hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]",
+  completed: "hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]",
+};
+
 interface RoundCardProps {
   round: Round;
   topicCount: number;
@@ -28,7 +35,7 @@ interface RoundCardProps {
 export function RoundCard({ round, topicCount, entryCount, onClick }: RoundCardProps) {
   return (
     <Card
-      className="cursor-pointer hover:border-primary/30 transition-all duration-300 hover:-translate-y-0.5"
+      className={`glass cursor-pointer transition-all duration-300 hover:-translate-y-1 ${statusGlows[round.status]}`}
       onClick={() => onClick?.(round.id)}
     >
       <CardHeader className="pb-3">
@@ -49,7 +56,7 @@ export function RoundCard({ round, topicCount, entryCount, onClick }: RoundCardP
         <p className="text-sm text-muted-foreground mt-1">Prize Pool</p>
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between pt-3 border-t border-border text-sm text-muted-foreground">
+      <CardFooter className="flex items-center justify-between pt-3 border-t border-white/[0.06] text-sm text-muted-foreground">
         <span>{topicCount} topics</span>
         <span>{entryCount} entries</span>
       </CardFooter>

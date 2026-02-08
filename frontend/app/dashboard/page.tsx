@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ClipboardList, Flame, Mail, Coins, Wallet } from "lucide-react";
 import { StatCard } from "@/components/features/common/StatCard";
 import {
   getDashboardStats,
@@ -42,7 +42,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      // Hardcoded user-1 — will be replaced with wallet connection in Phase 5
       const dashStats = await getDashboardStats("user-1");
       setStats(dashStats);
 
@@ -54,7 +53,6 @@ export default function DashboardPage() {
       );
       setActiveRequests(myActive);
 
-      // Proposals attached to my requests
       const myRequests = allRequests.filter((r) => r.requesterId === "user-1");
       const allProposals: ProposalWithAgent[] = [];
       for (const req of myRequests.slice(0, 5)) {
@@ -71,10 +69,13 @@ export default function DashboardPage() {
 
   if (!isConnected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+        <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center">
+          <Wallet className="w-8 h-8 text-accent" />
+        </div>
         <h2 className="font-heading text-2xl font-bold">Connect Your Wallet</h2>
-        <p className="text-muted-foreground text-sm">
-          Connect your wallet to access the dashboard
+        <p className="text-muted-foreground text-sm max-w-sm text-center">
+          Connect your wallet to access the dashboard and manage your tasks
         </p>
         <ConnectButton />
       </div>
@@ -87,13 +88,13 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <StatCard label="Total Requests" value={stats.totalRequests} icon={<span>📋</span>} />
-        <StatCard label="Active" value={stats.activeRequests} icon={<span>🔥</span>} />
-        <StatCard label="Proposals Received" value={stats.totalProposals} icon={<span>📩</span>} />
+        <StatCard label="Total Requests" value={stats.totalRequests} icon={<ClipboardList className="w-5 h-5" />} />
+        <StatCard label="Active" value={stats.activeRequests} icon={<Flame className="w-5 h-5" />} />
+        <StatCard label="Proposals Received" value={stats.totalProposals} icon={<Mail className="w-5 h-5" />} />
         <StatCard
           label="Total Spent"
           value={`${stats.totalSpent.toLocaleString()} FORGE`}
-          icon={<span>💰</span>}
+          icon={<Coins className="w-5 h-5" />}
         />
       </div>
 
@@ -107,23 +108,22 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {activeRequests.map((req) => (
                 <Link key={req.id} href={`/market/${req.id}`}>
-                  <Card className="hover:border-primary/30 transition-all duration-300">
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">{req.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {req.budget.toLocaleString()} FORGE •{" "}
-                          {req.proposals.length} proposals
-                        </p>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={statusColors[req.status]}
-                      >
-                        {req.status.replace("_", " ")}
-                      </Badge>
-                    </CardContent>
-                  </Card>
+                  <div className="glass rounded-xl p-4 flex items-center justify-between
+                                  hover:border-accent/20 transition-all duration-300">
+                    <div>
+                      <p className="font-medium text-sm">{req.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {req.budget.toLocaleString()} FORGE •{" "}
+                        {req.proposals.length} proposals
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={statusColors[req.status]}
+                    >
+                      {req.status.replace("_", " ")}
+                    </Badge>
+                  </div>
                 </Link>
               ))}
             </div>
@@ -142,43 +142,41 @@ export default function DashboardPage() {
           {recentProposals.length > 0 ? (
             <div className="space-y-3">
               {recentProposals.map((prop) => (
-                <Card key={prop.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage src={prop.agent?.avatarUrl} />
-                          <AvatarFallback className="bg-secondary text-xs">
-                            {prop.agent?.name?.charAt(0) ?? "?"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium text-sm">
-                            {prop.agent?.name ?? prop.agentId}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {prop.requestTitle} •{" "}
-                            <span className="text-primary">
-                              {prop.price.toLocaleString()} FORGE
-                            </span>
-                          </p>
-                        </div>
+                <div key={prop.id} className="glass rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={prop.agent?.avatarUrl} />
+                        <AvatarFallback className="bg-secondary text-xs">
+                          {prop.agent?.name?.charAt(0) ?? "?"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-sm">
+                          {prop.agent?.name ?? prop.agentId}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {prop.requestTitle} •{" "}
+                          <span className="text-primary">
+                            {prop.price.toLocaleString()} FORGE
+                          </span>
+                        </p>
                       </div>
-                      <Badge
-                        variant="outline"
-                        className={
-                          prop.status === "accepted"
-                            ? "bg-green-500/20 text-green-400 border-green-500/30"
-                            : prop.status === "rejected"
-                              ? "bg-red-500/20 text-red-400 border-red-500/30"
-                              : "bg-primary/20 text-primary border-primary/30"
-                        }
-                      >
-                        {prop.status}
-                      </Badge>
                     </div>
-                  </CardContent>
-                </Card>
+                    <Badge
+                      variant="outline"
+                      className={
+                        prop.status === "accepted"
+                          ? "bg-green-500/20 text-green-400 border-green-500/30"
+                          : prop.status === "rejected"
+                            ? "bg-red-500/20 text-red-400 border-red-500/30"
+                            : "bg-primary/20 text-primary border-primary/30"
+                      }
+                    >
+                      {prop.status}
+                    </Badge>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (

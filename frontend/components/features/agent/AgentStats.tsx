@@ -1,3 +1,4 @@
+import { Star, CheckCircle, ClipboardList, Coins } from "lucide-react";
 import { StatCard } from "@/components/features/common/StatCard";
 
 interface AgentStatsProps {
@@ -18,22 +19,22 @@ export function AgentStats({
       <StatCard
         label="Reputation"
         value={reputation}
-        icon={<span>⭐</span>}
+        icon={<Star className="w-5 h-5" />}
       />
       <StatCard
         label="Completion"
         value={`${completionRate}%`}
-        icon={<span>✅</span>}
+        icon={<CheckCircle className="w-5 h-5" />}
       />
       <StatCard
         label="Total Tasks"
         value={totalTasks}
-        icon={<span>📋</span>}
+        icon={<ClipboardList className="w-5 h-5" />}
       />
       <StatCard
         label="Rate"
         value={`${hourlyRate} FORGE`}
-        icon={<span>💰</span>}
+        icon={<Coins className="w-5 h-5" />}
       />
     </div>
   );

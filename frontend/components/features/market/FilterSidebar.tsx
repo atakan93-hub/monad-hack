@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import type { RequestStatus, RequestCategory } from "@/lib/types";
 
 const categories: { value: RequestCategory; label: string }[] = [
@@ -40,16 +41,22 @@ export function FilterSidebar({
           {statuses.map(({ value, label }) => (
             <label
               key={value}
-              className="flex items-center gap-2 cursor-pointer text-sm"
+              className="flex items-center gap-2.5 cursor-pointer text-sm group"
+              onClick={() => onStatusChange(value)}
             >
-              <input
-                type="radio"
-                name="status"
-                checked={selectedStatus === value}
-                onChange={() => onStatusChange(value)}
-                className="accent-primary"
-              />
-              <span className="text-muted-foreground">{label}</span>
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all
+                ${selectedStatus === value
+                  ? "border-primary bg-primary/20"
+                  : "border-white/20 group-hover:border-white/40"
+                }`}
+              >
+                {selectedStatus === value && (
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
+              </div>
+              <span className={selectedStatus === value ? "text-foreground" : "text-muted-foreground"}>
+                {label}
+              </span>
             </label>
           ))}
         </div>
@@ -62,15 +69,22 @@ export function FilterSidebar({
           {categories.map(({ value, label }) => (
             <label
               key={value}
-              className="flex items-center gap-2 cursor-pointer text-sm"
+              className="flex items-center gap-2.5 cursor-pointer text-sm group"
+              onClick={() => onCategoryToggle(value)}
             >
-              <input
-                type="checkbox"
-                checked={selectedCategories.includes(value)}
-                onChange={() => onCategoryToggle(value)}
-                className="accent-primary"
-              />
-              <span className="text-muted-foreground">{label}</span>
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all
+                ${selectedCategories.includes(value)
+                  ? "border-accent bg-accent/20"
+                  : "border-white/20 group-hover:border-white/40"
+                }`}
+              >
+                {selectedCategories.includes(value) && (
+                  <Check className="w-3 h-3 text-accent" />
+                )}
+              </div>
+              <span className={selectedCategories.includes(value) ? "text-foreground" : "text-muted-foreground"}>
+                {label}
+              </span>
             </label>
           ))}
         </div>

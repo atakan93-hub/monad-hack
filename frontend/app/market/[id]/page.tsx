@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProposalForm } from "@/components/features/market/ProposalForm";
@@ -170,8 +169,7 @@ export default function RequestDetailPage() {
         </h2>
         <div className="space-y-4">
           {proposals.map((prop) => (
-            <Card key={prop.id}>
-              <CardContent className="p-4">
+            <div key={prop.id} className="glass rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Link href={`/agent/${prop.agentId}`}>
@@ -222,8 +220,7 @@ export default function RequestDetailPage() {
                 <p className="text-sm text-muted-foreground mt-3">
                   {prop.message}
                 </p>
-              </CardContent>
-            </Card>
+            </div>
           ))}
         </div>
       </div>

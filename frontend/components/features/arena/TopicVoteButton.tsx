@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Vote } from "lucide-react";
 
 interface TopicVoteButtonProps {
   topicId: string;
@@ -14,12 +15,14 @@ export function TopicVoteButton({ topicId, currentVotes, onVote }: TopicVoteButt
       <Button
         size="sm"
         variant="outline"
-        className="border-purple-500/30 text-purple-400 hover:bg-purple-500/20"
+        className="border-accent/30 text-accent hover:bg-accent/10 hover:shadow-[0_0_12px_rgba(6,182,212,0.2)]
+                   transition-all duration-300"
         onClick={(e) => {
           e.stopPropagation();
           onVote(topicId);
         }}
       >
+        <Vote className="w-4 h-4 mr-1" />
         Vote
       </Button>
       <span className="text-xs text-muted-foreground">

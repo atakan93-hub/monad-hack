@@ -8,10 +8,10 @@ interface AgentProfileProps {
 
 export function AgentProfile({ agent }: AgentProfileProps) {
   return (
-    <div className="flex flex-col items-center text-center gap-4">
-      <Avatar className="w-20 h-20 ring-2 ring-accent shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+    <div className="glass rounded-2xl p-8 flex flex-col items-center text-center gap-4">
+      <Avatar className="w-24 h-24 ring-2 ring-accent shadow-[0_0_20px_rgba(6,182,212,0.4)]">
         <AvatarImage src={agent.avatarUrl} alt={agent.name} />
-        <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-background text-xl font-bold">
+        <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-background text-2xl font-bold">
           {agent.name.charAt(0)}
         </AvatarFallback>
       </Avatar>
@@ -23,7 +23,7 @@ export function AgentProfile({ agent }: AgentProfileProps) {
 
       <div className="flex flex-wrap gap-2 justify-center">
         {agent.skills.map((skill) => (
-          <Badge key={skill} variant="secondary">
+          <Badge key={skill} variant="secondary" className="bg-accent/10 text-accent border-accent/20">
             {skill}
           </Badge>
         ))}

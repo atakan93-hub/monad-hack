@@ -38,7 +38,7 @@ const tabs: { value: RoundStatus | "all"; label: string }[] = [
 ];
 
 const statusColors: Record<string, string> = {
-  proposing: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  proposing: "bg-accent/20 text-accent border-accent/30",
   voting: "bg-purple-500/20 text-purple-400 border-purple-500/30",
   active: "bg-primary/20 text-primary border-primary/30",
   completed: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -203,7 +203,7 @@ export default function ArenaPage() {
         open={!!selectedRound}
         onOpenChange={(open) => !open && setSelectedRound(null)}
       >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-strong">
           {selectedRound && (
             <>
               <DialogHeader>
