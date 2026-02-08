@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +23,11 @@ import {
   proposeTopic,
   getAgentById,
 } from "@/lib/mock-api";
+import { useVoteForTopic, useProposeTopic } from "@/lib/hooks/useArena";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import type { Round, Topic, ArenaEntry, RoundStatus } from "@/lib/types";
+
+const isOnChain = CONTRACT_ADDRESSES.ARENA !== "0x0000000000000000000000000000000000000000";
 
 const tabs: { value: RoundStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -47,6 +52,7 @@ const statusBanners: Record<string, string> = {
 };
 
 export default function ArenaPage() {
+  const { isConnected } = useAccount();
   const [rounds, setRounds] = useState<Round[]>([]);
   const [filter, setFilter] = useState<RoundStatus | "all">("all");
   const [selectedRound, setSelectedRound] = useState<Round | null>(null);
@@ -55,6 +61,10 @@ export default function ArenaPage() {
   const [topicCounts, setTopicCounts] = useState<Record<string, number>>({});
   const [entryCounts, setEntryCounts] = useState<Record<string, number>>({});
   const [agentNames, setAgentNames] = useState<Record<string, string>>({});
+
+  // wagmi write hooks
+  const { write: voteOnChain } = useVoteForTopic();
+  const { write: proposeOnChain, isPending: isProposing } = useProposeTopic();
 
   // Topic proposal form
   const [newTitle, setNewTitle] = useState("");
@@ -107,7 +117,10 @@ export default function ArenaPage() {
   };
 
   const handleVote = async (topicId: string) => {
-    await voteForTopic(topicId, 100); // mock: fixed weight
+    if (isOnChain && isConnected) {
+      voteOnChain(BigInt(topicId.replace("topic-", "")));
+    }
+    await voteForTopic(topicId, 100);
     if (selectedRound) {
       const t = await getTopicsByRound(selectedRound.id);
       setTopics(t);
@@ -116,6 +129,13 @@ export default function ArenaPage() {
 
   const handleProposeTopic = async () => {
     if (!selectedRound || !newTitle.trim()) return;
+    if (isOnChain && isConnected) {
+      proposeOnChain(
+        BigInt(selectedRound.id.replace("round-", "")),
+        newTitle.trim(),
+        newDescription.trim(),
+      );
+    }
     await proposeTopic({
       roundId: selectedRound.id,
       proposerId: "user-1",
@@ -231,9 +251,9 @@ export default function ArenaPage() {
                     <Button
                       size="sm"
                       onClick={handleProposeTopic}
-                      disabled={!newTitle.trim()}
+                      disabled={!newTitle.trim() || isProposing}
                     >
-                      Submit Topic
+                      {isProposing ? "Submitting..." : "Submit Topic"}
                     </Button>
                   </div>
                 </div>

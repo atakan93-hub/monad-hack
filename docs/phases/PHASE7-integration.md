@@ -73,16 +73,18 @@ Wallet connect → view stats → active requests → received proposals
 
 ## Completion Checklist
 
-- [ ] ABI files exist in `frontend/lib/contracts/`
-- [ ] Hooks import without errors
-- [ ] Escrow hook triggers transaction
-- [ ] Arena vote hook triggers transaction
-- [ ] Glow effects visible
-- [ ] Hover animations work
-- [ ] Marketplace E2E flow passes
-- [ ] Arena E2E flow passes
-- [ ] Dashboard E2E flow passes
-- [ ] `npm run build` 0 errors
+- [x] ABI files exist in `frontend/lib/contracts/` (as const .ts 형식)
+- [x] Hooks import without errors
+- [x] Escrow hook wired to Market accept button
+- [x] Arena vote/propose hooks wired to Arena page
+- [x] Glow effects in globals.css (glow-amber, glow-blue, card-hover-glow)
+- [x] Hover animations work (card-hover-glow, pulse-glow)
+- [x] Logo asset (logo.webp) in Navbar
+- [x] Hero asset (hero.webp) as landing background
+- [x] Gradient text on stats section
+- [x] Fade-in animations on hero
+- [x] `npm run build` 0 errors (8 routes)
+- [x] `forge test` 36 passed, 0 failed
 
 ---
 

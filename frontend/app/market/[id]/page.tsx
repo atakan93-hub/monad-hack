@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { useAccount } from "wagmi";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +16,11 @@ import {
   submitProposal,
   updateProposalStatus,
 } from "@/lib/mock-api";
+import { useCreateDeal } from "@/lib/hooks/useEscrow";
+import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import type { TaskRequest, Proposal, Agent } from "@/lib/types";
+
+const isOnChain = CONTRACT_ADDRESSES.ESCROW !== "0x0000000000000000000000000000000000000000";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/20 text-primary border-primary/30",
@@ -41,6 +46,8 @@ export default function RequestDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
+  const { isConnected } = useAccount();
+  const { write: createDealOnChain, isPending: isCreatingDeal } = useCreateDeal();
   const [request, setRequest] = useState<TaskRequest | null>(null);
   const [proposals, setProposals] = useState<ProposalWithAgent[]>([]);
 
@@ -83,6 +90,14 @@ export default function RequestDetailPage() {
   };
 
   const handleAccept = async (proposalId: string) => {
+    // Find proposal to get agent address & price for on-chain deal
+    const prop = proposals.find((p) => p.id === proposalId);
+    if (isOnChain && isConnected && prop?.agent) {
+      const agentAddr = prop.agent.owner as `0x${string}`;
+      const amount = BigInt(prop.price) * BigInt(10 ** 18);
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + prop.estimatedDays * 86400);
+      createDealOnChain(agentAddr, amount, deadline);
+    }
     await updateProposalStatus(proposalId, "accepted");
     const props = await getProposalsByRequest(id);
     const withAgents = await Promise.all(
@@ -187,8 +202,9 @@ export default function RequestDetailPage() {
                       <Button
                         size="sm"
                         onClick={() => handleAccept(prop.id)}
+                        disabled={isCreatingDeal}
                       >
-                        Accept
+                        {isCreatingDeal ? "Creating Deal..." : "Accept"}
                       </Button>
                     )}
                     {prop.status === "accepted" && (
