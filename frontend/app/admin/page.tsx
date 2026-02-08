@@ -5,6 +5,13 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { parseUnits } from "viem";
 import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
 import { useCreateRound, useAdvanceRound, useSelectWinner } from "@/lib/hooks/useArena";
+import {
+  getRounds,
+  createRoundRecord,
+  updateRoundWinner,
+  getEntriesByRound,
+  getAgentById,
+} from "@/lib/supabase-api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { supabase } from "@/lib/supabase";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
 import { Erc20Abi } from "@/lib/contracts/Erc20Abi";
@@ -27,33 +33,9 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
+import type { Round, ArenaEntry, Agent } from "@/lib/types";
 
-// ─── Types ────────────────────────────────────────────
-interface RoundRow {
-  id: string;
-  round_number: number;
-  prize: number;
-  status: string;
-  selected_topic_id: string | null;
-  winner_id: string | null;
-  created_at: string;
-}
-
-interface EntryRow {
-  id: string;
-  round_id: string;
-  agent_id: string;
-  repo_url: string;
-  description: string;
-  demo_url: string | null;
-}
-
-interface AgentRow {
-  id: string;
-  name: string;
-  owner_id: string;
-}
-
+// ─── Constants ────────────────────────────────────────
 const STATUS_LABELS: Record<string, string> = {
   proposing: "Proposing",
   voting: "Voting",
@@ -79,12 +61,12 @@ export default function AdminPage() {
   const { address } = useAccount();
 
   const [prizeAmount, setPrizeAmount] = useState("");
-  const [rounds, setRounds] = useState<RoundRow[]>([]);
+  const [rounds, setRounds] = useState<Round[]>([]);
   const [isLoadingRounds, setIsLoadingRounds] = useState(true);
 
   // Winner selector state
-  const [winnerRound, setWinnerRound] = useState<RoundRow | null>(null);
-  const [entries, setEntries] = useState<(EntryRow & { agent?: AgentRow })[]>([]);
+  const [winnerRound, setWinnerRound] = useState<Round | null>(null);
+  const [entries, setEntries] = useState<(ArenaEntry & { agent?: Agent })[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
 
   // ─── Contract hooks ─────────────────────────────────
@@ -120,11 +102,8 @@ export default function AdminPage() {
   // ─── Load rounds ───────────────────────────────────
   const loadRounds = useCallback(async () => {
     setIsLoadingRounds(true);
-    const { data } = await supabase
-      .from("rounds")
-      .select("*")
-      .order("round_number", { ascending: false });
-    setRounds((data as RoundRow[]) || []);
+    const data = await getRounds();
+    setRounds(data);
     setIsLoadingRounds(false);
   }, []);
 
@@ -163,10 +142,9 @@ export default function AdminPage() {
       const count = onChainRoundCount as bigint | undefined;
       const roundNum = count ? Number(count) : rounds.length + 1;
 
-      await supabase.from("rounds").insert({
-        round_number: roundNum,
+      await createRoundRecord({
+        roundNumber: roundNum,
         prize: Number(prizeAmount),
-        status: "proposing",
       });
 
       setPrizeAmount("");
@@ -177,68 +155,39 @@ export default function AdminPage() {
   }, [createRound.isSuccess]);
 
   // ─── Advance round ─────────────────────────────────
-  function handleAdvance(round: RoundRow) {
-    // on-chain roundId = round_number (1-indexed)
-    advanceRound.write(BigInt(round.round_number));
+  function handleAdvance(round: Round) {
+    advanceRound.write(BigInt(round.roundNumber));
   }
 
   useEffect(() => {
     if (!advanceRound.isSuccess) return;
-    // Reload to reflect new status
     loadRounds();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [advanceRound.isSuccess]);
 
-  // After on-chain advance success, update Supabase status
-  useEffect(() => {
-    if (!advanceRound.isSuccess) return;
-
-    // Find the round that was just advanced and update Supabase
-    (async () => {
-      // We can't directly know which round was advanced from the hook,
-      // so we re-fetch all. The loadRounds() above handles the UI.
-      // For DB sync, we rely on on-chain state being the source of truth.
-      // A more robust approach would parse tx logs.
-    })();
-  }, [advanceRound.isSuccess]);
-
   // ─── Select winner ─────────────────────────────────
-  async function openWinnerSelector(round: RoundRow) {
+  async function openWinnerSelector(round: Round) {
     setWinnerRound(round);
     setIsLoadingEntries(true);
 
-    const { data: entryRows } = await supabase
-      .from("arena_entries")
-      .select("*")
-      .eq("round_id", round.id);
+    const entryList = await getEntriesByRound(round.id);
 
-    if (entryRows && entryRows.length > 0) {
-      const agentIds = [...new Set(entryRows.map((e: EntryRow) => e.agent_id))];
-      const { data: agents } = await supabase
-        .from("agents")
-        .select("id, name, owner_id")
-        .in("id", agentIds);
+    const enriched = await Promise.all(
+      entryList.map(async (entry) => {
+        const agent = await getAgentById(entry.agentId);
+        return { ...entry, agent: agent ?? undefined };
+      })
+    );
 
-      const agentMap = new Map((agents ?? []).map((a: AgentRow) => [a.id, a]));
-
-      setEntries(
-        entryRows.map((e: EntryRow) => ({
-          ...e,
-          agent: agentMap.get(e.agent_id),
-        }))
-      );
-    } else {
-      setEntries([]);
-    }
+    setEntries(enriched);
     setIsLoadingEntries(false);
   }
 
-  function handleSelectWinner(entry: EntryRow & { agent?: AgentRow }) {
+  function handleSelectWinner(entry: ArenaEntry & { agent?: Agent }) {
     if (!winnerRound || !entry.agent) return;
-    // on-chain: selectWinner(roundId, winnerAddress)
     selectWinner.write(
-      BigInt(winnerRound.round_number),
-      entry.agent.owner_id as `0x${string}`
+      BigInt(winnerRound.roundNumber),
+      entry.agent.owner as `0x${string}`
     );
   }
 
@@ -246,14 +195,10 @@ export default function AdminPage() {
     if (!selectWinner.isSuccess || !winnerRound) return;
 
     (async () => {
-      // Update Supabase
-      await supabase
-        .from("rounds")
-        .update({
-          status: "completed",
-          winner_id: entries.find(() => true)?.agent_id,
-        })
-        .eq("id", winnerRound.id);
+      const selectedEntry = entries[0];
+      if (selectedEntry?.agentId) {
+        await updateRoundWinner(winnerRound.id, selectedEntry.agentId);
+      }
 
       setWinnerRound(null);
       setEntries([]);
@@ -389,7 +334,7 @@ export default function AdminPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-heading font-semibold">
-                      Round #{round.round_number}
+                      Round #{round.roundNumber}
                     </span>
                     <Badge
                       variant="outline"
@@ -404,7 +349,6 @@ export default function AdminPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  {/* Advance button for proposing / voting */}
                   {(round.status === "proposing" || round.status === "voting") && (
                     <Button
                       size="sm"
@@ -423,7 +367,6 @@ export default function AdminPage() {
                     </Button>
                   )}
 
-                  {/* Select winner for active */}
                   {round.status === "active" && (
                     <Button
                       size="sm"
@@ -435,8 +378,7 @@ export default function AdminPage() {
                     </Button>
                   )}
 
-                  {/* Completed */}
-                  {round.status === "completed" && round.winner_id && (
+                  {round.status === "completed" && round.winnerId && (
                     <span className="text-xs text-green-400 font-mono">
                       Winner selected
                     </span>
@@ -467,7 +409,7 @@ export default function AdminPage() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-strong">
           <DialogHeader>
             <DialogTitle className="font-heading">
-              Select Winner — Round #{winnerRound?.round_number}
+              Select Winner — Round #{winnerRound?.roundNumber}
             </DialogTitle>
           </DialogHeader>
 
@@ -493,19 +435,19 @@ export default function AdminPage() {
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                       {entry.description}
                     </p>
-                    {entry.repo_url && (
+                    {entry.repoUrl && (
                       <a
-                        href={entry.repo_url}
+                        href={entry.repoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-primary hover:underline mt-1 inline-block"
                       >
-                        {entry.repo_url}
+                        {entry.repoUrl}
                       </a>
                     )}
-                    {entry.agent?.owner_id && (
+                    {entry.agent?.owner && (
                       <p className="text-xs text-muted-foreground font-mono mt-1">
-                        Owner: {entry.agent.owner_id.slice(0, 6)}...{entry.agent.owner_id.slice(-4)}
+                        Owner: {entry.agent.owner.slice(0, 6)}...{entry.agent.owner.slice(-4)}
                       </p>
                     )}
                   </div>

@@ -399,6 +399,50 @@ export async function getRoundById(id: string): Promise<Round | null> {
   return data ? toRound(data) : null;
 }
 
+export async function createRoundRecord(
+  data: { roundNumber: number; prize: number }
+): Promise<Round> {
+  const { data: row, error } = await supabase
+    .from("rounds")
+    .insert({
+      round_number: data.roundNumber,
+      prize: data.prize,
+      status: "proposing",
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return toRound(row);
+}
+
+export async function updateRoundStatus(
+  id: string,
+  status: RoundStatus
+): Promise<Round> {
+  const { data: row, error } = await supabase
+    .from("rounds")
+    .update({ status })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return toRound(row);
+}
+
+export async function updateRoundWinner(
+  id: string,
+  winnerId: string
+): Promise<Round> {
+  const { data: row, error } = await supabase
+    .from("rounds")
+    .update({ status: "completed", winner_id: winnerId })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return toRound(row);
+}
+
 // ============================================================
 // Topics
 // ============================================================
