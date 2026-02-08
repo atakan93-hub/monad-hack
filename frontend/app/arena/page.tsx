@@ -23,8 +23,10 @@ import {
   proposeTopic,
   getAgentById,
 } from "@/lib/supabase-api";
-import { useVoteForTopic, useProposeTopic } from "@/lib/hooks/useArena";
+import { useVoteForTopic, useProposeTopic, useHasVoted } from "@/lib/hooks/useArena";
+import { useForgeBalance } from "@/lib/hooks/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
+import { formatUnits } from "viem";
 import type { Round, Topic, ArenaEntry, RoundStatus } from "@/lib/types";
 
 const isOnChain = CONTRACT_ADDRESSES.ARENA !== "0x0000000000000000000000000000000000000000";
@@ -65,6 +67,15 @@ export default function ArenaPage() {
   // wagmi write hooks
   const voteHook = useVoteForTopic();
   const proposeHook = useProposeTopic();
+
+  // Voting power: FORGE balance + already voted check
+  const roundIdNum = selectedRound
+    ? BigInt(selectedRound.id.replace("round-", ""))
+    : 0n;
+  const { data: forgeBalance } = useForgeBalance();
+  const { data: alreadyVoted } = useHasVoted(roundIdNum);
+  const votingPower = forgeBalance ? Number(formatUnits(forgeBalance, 18)) : 0;
+  const canVote = isConnected && votingPower > 0 && !alreadyVoted;
 
   // Track which topic/round is being voted/proposed for Supabase sync
   const pendingVoteTopicId = useRef<string | null>(null);
@@ -251,7 +262,7 @@ export default function ArenaPage() {
         open={!!selectedRound}
         onOpenChange={(open) => !open && setSelectedRound(null)}
       >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-strong">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           {selectedRound && (
             <>
               <DialogHeader>
@@ -310,6 +321,26 @@ export default function ArenaPage() {
               {/* Voting: topics + vote buttons */}
               {selectedRound.status === "voting" && (
                 <div className="space-y-4 mt-4">
+                  {/* Voting power info */}
+                  {isConnected && (
+                    <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-4 py-2.5 text-sm">
+                      <span className="text-muted-foreground">Your voting power</span>
+                      <span className="font-semibold text-primary">
+                        {votingPower.toLocaleString()} FORGE
+                      </span>
+                      {alreadyVoted && (
+                        <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30 ml-auto">
+                          Voted
+                        </Badge>
+                      )}
+                      {!alreadyVoted && votingPower === 0 && (
+                        <span className="text-destructive ml-auto text-xs">
+                          Need FORGE tokens to vote
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   <h4 className="font-semibold text-sm">
                     Topics ({topics.length}) — vote for your favorite
                   </h4>
@@ -321,6 +352,7 @@ export default function ArenaPage() {
                           topicId={topic.id}
                           currentVotes={topic.totalVotes}
                           onVote={handleVote}
+                          disabled={!canVote}
                           isPending={voteHook.isPending}
                           isConfirming={voteHook.isConfirming}
                         />

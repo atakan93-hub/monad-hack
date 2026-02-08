@@ -1,6 +1,6 @@
 "use client";
 
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 
@@ -99,5 +99,16 @@ export function useGetRoundEntries(roundId: bigint) {
     ...arenaConfig,
     functionName: "getRoundEntries",
     args: [roundId],
+  });
+}
+
+export function useHasVoted(roundId: bigint) {
+  const { address } = useAccount();
+
+  return useReadContract({
+    ...arenaConfig,
+    functionName: "hasVoted",
+    args: address ? [roundId, address] : undefined,
+    query: { enabled: !!address },
   });
 }

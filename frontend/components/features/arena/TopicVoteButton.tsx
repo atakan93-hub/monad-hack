@@ -7,11 +7,12 @@ interface TopicVoteButtonProps {
   topicId: string;
   currentVotes: number;
   onVote: (topicId: string) => void;
+  disabled?: boolean;
   isPending?: boolean;
   isConfirming?: boolean;
 }
 
-export function TopicVoteButton({ topicId, currentVotes, onVote, isPending, isConfirming }: TopicVoteButtonProps) {
+export function TopicVoteButton({ topicId, currentVotes, onVote, disabled, isPending, isConfirming }: TopicVoteButtonProps) {
   const loading = isPending || isConfirming;
   return (
     <div className="flex items-center gap-3">
@@ -20,7 +21,7 @@ export function TopicVoteButton({ topicId, currentVotes, onVote, isPending, isCo
         variant="outline"
         className="border-accent/30 text-accent hover:bg-accent/10 hover:shadow-[0_0_12px_rgba(6,182,212,0.2)]
                    transition-all duration-300"
-        disabled={loading}
+        disabled={disabled || loading}
         onClick={(e) => {
           e.stopPropagation();
           onVote(topicId);
