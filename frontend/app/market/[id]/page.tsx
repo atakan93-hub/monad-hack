@@ -12,8 +12,6 @@ import {
   getRequestById,
   getProposalsByRequest,
   getAgentById,
-  submitProposal,
-  updateProposalStatus,
 } from "@/lib/supabase-api";
 import { useCreateDeal } from "@/lib/hooks/useEscrow";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
@@ -76,8 +74,11 @@ export default function RequestDetailPage() {
     estimatedDays: number;
     message: string;
   }) => {
-    await submitProposal(data);
-    // Reload
+    await fetch("/api/market/proposals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "submit", ...data }),
+    });
     const props = await getProposalsByRequest(id);
     const withAgents = await Promise.all(
       props.map(async (p) => ({
@@ -97,7 +98,11 @@ export default function RequestDetailPage() {
       const deadline = BigInt(Math.floor(Date.now() / 1000) + prop.estimatedDays * 86400);
       createDealOnChain(agentAddr, amount, deadline);
     }
-    await updateProposalStatus(proposalId, "accepted");
+    await fetch("/api/market/proposals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "updateStatus", proposalId, status: "accepted" }),
+    });
     const props = await getProposalsByRequest(id);
     const withAgents = await Promise.all(
       props.map(async (p) => ({

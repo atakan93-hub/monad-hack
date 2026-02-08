@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getRequests, createRequest } from "@/lib/supabase-api";
+import { getRequests } from "@/lib/supabase-api";
 import type { TaskRequest, RequestStatus, RequestCategory } from "@/lib/types";
 
 export default function MarketPage() {
@@ -51,13 +51,17 @@ export default function MarketPage() {
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createRequest({
-      title: formTitle,
-      description: formDesc,
-      budget: parseInt(formBudget),
-      category: formCategory,
-      deadline: new Date(formDeadline).toISOString(),
-      requesterId: "user-1",
+    await fetch("/api/market/requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: formTitle,
+        description: formDesc,
+        budget: parseInt(formBudget),
+        category: formCategory,
+        deadline: new Date(formDeadline).toISOString(),
+        requesterId: "user-1",
+      }),
     });
     setShowNewRequest(false);
     setFormTitle("");

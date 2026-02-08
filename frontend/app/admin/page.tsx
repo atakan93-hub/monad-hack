@@ -7,8 +7,6 @@ import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
 import { useCreateRound, useAdvanceRound, useSelectWinner } from "@/lib/hooks/useArena";
 import {
   getRounds,
-  createRoundRecord,
-  updateRoundWinner,
   getEntriesByRound,
   getAgentById,
 } from "@/lib/supabase-api";
@@ -134,7 +132,7 @@ export default function AdminPage() {
     createRound.write(prizeWei);
   }
 
-  // After createRound success → sync to Supabase
+  // After createRound success → sync DB via API
   useEffect(() => {
     if (!createRound.isSuccess) return;
 
@@ -142,9 +140,14 @@ export default function AdminPage() {
       const count = onChainRoundCount as bigint | undefined;
       const roundNum = count ? Number(count) : rounds.length + 1;
 
-      await createRoundRecord({
-        roundNumber: roundNum,
-        prize: Number(prizeAmount),
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "createRound",
+          roundNumber: roundNum,
+          prize: Number(prizeAmount),
+        }),
       });
 
       setPrizeAmount("");
@@ -155,13 +158,33 @@ export default function AdminPage() {
   }, [createRound.isSuccess]);
 
   // ─── Advance round ─────────────────────────────────
+  const [advancingRoundId, setAdvancingRoundId] = useState<string | null>(null);
+  const [advancingNewStatus, setAdvancingNewStatus] = useState<string | null>(null);
+
   function handleAdvance(round: Round) {
+    const nextStatus = round.status === "proposing" ? "voting" : "active";
+    setAdvancingRoundId(round.id);
+    setAdvancingNewStatus(nextStatus);
     advanceRound.write(BigInt(round.roundNumber));
   }
 
   useEffect(() => {
-    if (!advanceRound.isSuccess) return;
-    loadRounds();
+    if (!advanceRound.isSuccess || !advancingRoundId || !advancingNewStatus) return;
+
+    (async () => {
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "advanceRound",
+          roundId: advancingRoundId,
+          newStatus: advancingNewStatus,
+        }),
+      });
+      setAdvancingRoundId(null);
+      setAdvancingNewStatus(null);
+      loadRounds();
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [advanceRound.isSuccess]);
 
@@ -185,21 +208,30 @@ export default function AdminPage() {
 
   function handleSelectWinner(entry: ArenaEntry & { agent?: Agent }) {
     if (!winnerRound || !entry.agent) return;
+    setSelectedWinnerAgentId(entry.agentId);
     selectWinner.write(
       BigInt(winnerRound.roundNumber),
       entry.agent.owner as `0x${string}`
     );
   }
 
+  const [selectedWinnerAgentId, setSelectedWinnerAgentId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!selectWinner.isSuccess || !winnerRound) return;
+    if (!selectWinner.isSuccess || !winnerRound || !selectedWinnerAgentId) return;
 
     (async () => {
-      const selectedEntry = entries[0];
-      if (selectedEntry?.agentId) {
-        await updateRoundWinner(winnerRound.id, selectedEntry.agentId);
-      }
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "selectWinner",
+          roundId: winnerRound.id,
+          winnerId: selectedWinnerAgentId,
+        }),
+      });
 
+      setSelectedWinnerAgentId(null);
       setWinnerRound(null);
       setEntries([]);
       loadRounds();

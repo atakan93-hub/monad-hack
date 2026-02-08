@@ -19,8 +19,6 @@ import {
   getRounds,
   getTopicsByRound,
   getEntriesByRound,
-  voteForTopic,
-  proposeTopic,
   getAgentById,
 } from "@/lib/supabase-api";
 import { useVoteForTopic, useProposeTopic, useHasVoted } from "@/lib/hooks/useArena";
@@ -133,12 +131,14 @@ export default function ArenaPage() {
 
   const handleVote = async (topicId: string) => {
     if (isOnChain && isConnected) {
-      // Store pending vote for Supabase sync after tx confirmation
       pendingVoteTopicId.current = topicId;
       voteHook.write(BigInt(topicId.replace("topic-", "")));
     } else {
-      // Off-chain only: update Supabase directly
-      await voteForTopic(topicId, 100);
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "voteForTopic", topicId, weight: 100 }),
+      });
       if (selectedRound) {
         const t = await getTopicsByRound(selectedRound.id);
         setTopics(t);
@@ -146,14 +146,18 @@ export default function ArenaPage() {
     }
   };
 
-  // Sync Supabase after on-chain vote confirmation
+  // Sync DB after on-chain vote confirmation
   useEffect(() => {
     if (!voteHook.isSuccess || !pendingVoteTopicId.current) return;
     const topicId = pendingVoteTopicId.current;
     pendingVoteTopicId.current = null;
 
     (async () => {
-      await voteForTopic(topicId, 100);
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "voteForTopic", topicId, weight: 100 }),
+      });
       if (selectedRound) {
         const t = await getTopicsByRound(selectedRound.id);
         setTopics(t);
@@ -174,11 +178,16 @@ export default function ArenaPage() {
       setNewTitle("");
       setNewDescription("");
     } else {
-      await proposeTopic({
-        roundId: selectedRound.id,
-        proposerId: "user-1",
-        title: newTitle.trim(),
-        description: newDescription.trim(),
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "proposeTopic",
+          roundId: selectedRound.id,
+          proposerId: "user-1",
+          title: newTitle.trim(),
+          description: newDescription.trim(),
+        }),
       });
       setNewTitle("");
       setNewDescription("");
@@ -188,18 +197,23 @@ export default function ArenaPage() {
     }
   };
 
-  // Sync Supabase after on-chain propose confirmation
+  // Sync DB after on-chain propose confirmation
   useEffect(() => {
     if (!proposeHook.isSuccess || !selectedRound || !pendingProposeData.current) return;
     const data = pendingProposeData.current;
     pendingProposeData.current = null;
 
     (async () => {
-      await proposeTopic({
-        roundId: selectedRound.id,
-        proposerId: "user-1",
-        title: data.title,
-        description: data.description,
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "proposeTopic",
+          roundId: selectedRound.id,
+          proposerId: "user-1",
+          title: data.title,
+          description: data.description,
+        }),
       });
       const t = await getTopicsByRound(selectedRound.id);
       setTopics(t);
