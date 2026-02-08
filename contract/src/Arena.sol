@@ -3,9 +3,10 @@ pragma solidity ^0.8.20;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-contract Arena is ReentrancyGuard {
+contract Arena is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     // ── Types ────────────────────────────────────────────
     enum RoundStatus {
@@ -40,7 +41,6 @@ contract Arena is ReentrancyGuard {
 
     // ── State ────────────────────────────────────────────
     IERC20 public forgeToken;
-    address public admin;
 
     uint256 public roundCount;
     uint256 public topicCount;
@@ -65,26 +65,15 @@ contract Arena is ReentrancyGuard {
     event EntrySubmitted(uint256 indexed roundId, uint256 entryId, address agent);
     event WinnerSelected(uint256 indexed roundId, address winner, uint256 prize);
 
-    // ── Modifiers ────────────────────────────────────────
-    modifier onlyAdmin() {
-        _checkAdmin();
-        _;
-    }
-
-    function _checkAdmin() internal view {
-        require(msg.sender == admin, "Only admin");
-    }
-
     // ── Constructor ──────────────────────────────────────
-    constructor(address _token) {
+    constructor(address _token, address _admin) Ownable(_admin) {
         require(_token != address(0), "Invalid token");
         forgeToken = IERC20(_token);
-        admin = msg.sender;
     }
 
     // ── Round Management (Admin) ─────────────────────────
 
-    function createRound(uint256 _prize) external onlyAdmin nonReentrant {
+    function createRound(uint256 _prize) external onlyOwner nonReentrant {
         uint256 roundId = roundCount++;
         rounds[roundId] = Round({
             roundNumber: roundId + 1,
@@ -113,7 +102,7 @@ contract Arena is ReentrancyGuard {
         emit PrizeContributed(_roundId, msg.sender, _amount);
     }
 
-    function advanceRound(uint256 _roundId) external onlyAdmin {
+    function advanceRound(uint256 _roundId) external onlyOwner {
         Round storage round = rounds[_roundId];
         require(_roundId < roundCount, "Round not found");
 
@@ -133,7 +122,7 @@ contract Arena is ReentrancyGuard {
         emit RoundAdvanced(_roundId, round.status);
     }
 
-    function selectWinner(uint256 _roundId, address _winner) external onlyAdmin nonReentrant {
+    function selectWinner(uint256 _roundId, address _winner) external onlyOwner nonReentrant {
         Round storage round = rounds[_roundId];
         require(_roundId < roundCount, "Round not found");
         require(round.status == RoundStatus.Completed, "Not completed");

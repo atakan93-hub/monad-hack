@@ -20,7 +20,7 @@ contract ArenaTest is Test {
 
     function setUp() public {
         token = new MockToken();
-        arena = new Arena(address(token));
+        arena = new Arena(address(token), admin);
 
         // Give admin tokens for prize
         token.mint(admin, 50000 ether);
@@ -55,7 +55,7 @@ contract ArenaTest is Test {
 
     function test_createRound_notAdmin_reverts() public {
         vm.prank(stranger);
-        vm.expectRevert("Only admin");
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", stranger));
         arena.createRound(PRIZE);
     }
 
@@ -246,7 +246,7 @@ contract ArenaTest is Test {
         _completedRound();
 
         vm.prank(stranger);
-        vm.expectRevert("Only admin");
+        vm.expectRevert(abi.encodeWithSignature("OwnableUnauthorizedAccount(address)", stranger));
         arena.selectWinner(0, agent1);
     }
 

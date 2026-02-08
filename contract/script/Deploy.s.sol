@@ -15,7 +15,8 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerKey);
 
         Escrow escrow = new Escrow(forgeToken, feeRate, treasury);
-        Arena arena = new Arena(forgeToken);
+        address adminAddr = vm.envOr("ARENA_ADMIN", vm.addr(deployerKey));
+        Arena arena = new Arena(forgeToken, adminAddr);
 
         vm.stopBroadcast();
 

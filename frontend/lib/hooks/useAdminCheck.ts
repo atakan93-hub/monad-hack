@@ -10,7 +10,7 @@ export function useAdminCheck() {
   const { data: adminAddress, isLoading } = useReadContract({
     address: CONTRACT_ADDRESSES.ARENA,
     abi: ArenaAbi,
-    functionName: "admin",
+    functionName: "owner",
   });
 
   const isAdmin =
