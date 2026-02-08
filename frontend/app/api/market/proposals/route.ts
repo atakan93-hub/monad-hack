@@ -10,12 +10,12 @@ export async function POST(req: NextRequest) {
   try {
     switch (action) {
       case "submit": {
-        const { requestId, agentId, price, estimatedDays, message } = body;
+        const { requestId, userId, price, estimatedDays, message } = body;
         const { data, error } = await supabase
           .from("proposals")
           .insert({
             request_id: requestId,
-            agent_id: agentId,
+            user_id: userId,
             price,
             estimated_days: estimatedDays,
             message,

@@ -11,14 +11,14 @@ export async function POST(req: NextRequest) {
   try {
     switch (action) {
       case "createEscrow": {
-        const { requestId, address, agentId, amount } = body;
+        const { requestId, address, userId, amount } = body;
         const requesterId = await resolveUserId(address);
         const { data, error } = await supabase
           .from("escrow_deals")
           .insert({
             request_id: requestId,
             requester_id: requesterId,
-            agent_id: agentId,
+            user_id: userId,
             amount,
           })
           .select()

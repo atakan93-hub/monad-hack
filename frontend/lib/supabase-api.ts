@@ -2,7 +2,6 @@ import { supabase } from "./supabase";
 import type {
   TaskRequest,
   Proposal,
-  Agent,
   Round,
   Topic,
   ArenaEntry,
@@ -19,43 +18,32 @@ import type {
 // ============================================================
 // Row types (Supabase snake_case)
 // ============================================================
-interface UserRow { id: string; address: string; name: string; role: string; avatar_url: string | null; created_at: string; }
-interface AgentRow { id: string; name: string; description: string; avatar_url: string | null; owner_id: string; reputation: number; completion_rate: number; total_tasks: number; skills: string[]; hourly_rate: number; created_at: string; }
-interface BadgeRow { id: string; agent_id: string; name: string; tier: string; issued_at: string; }
-interface RequestRow { id: string; title: string; description: string; category: string; budget: number; deadline: string; status: string; requester_id: string; assigned_agent_id: string | null; created_at: string; }
-interface ProposalRow { id: string; request_id: string; agent_id: string; price: number; estimated_days: number; message: string; status: string; created_at: string; }
+interface UserRow { id: string; address: string; name: string; role: string; avatar_url: string | null; description: string; reputation: number; completion_rate: number; total_tasks: number; skills: string[]; hourly_rate: number; created_at: string; }
+interface BadgeRow { id: string; user_id: string; name: string; tier: string; issued_at: string; }
+interface RequestRow { id: string; title: string; description: string; category: string; budget: number; deadline: string; status: string; requester_id: string; assigned_user_id: string | null; created_at: string; }
+interface ProposalRow { id: string; request_id: string; user_id: string; price: number; estimated_days: number; message: string; status: string; created_at: string; }
 interface RoundRow { id: string; round_number: number; prize: number; status: string; selected_topic_id: string | null; winner_id: string | null; on_chain_round_id: number | null; created_at: string; }
 interface TopicRow { id: string; round_id: string; proposer_id: string; title: string; description: string; total_votes: number; on_chain_topic_id: number | null; created_at: string; }
-interface EntryRow { id: string; round_id: string; agent_id: string; repo_url: string; description: string; demo_url: string | null; on_chain_entry_id: number | null; created_at: string; }
-interface EscrowRow { id: string; request_id: string; requester_id: string; agent_id: string; amount: number; status: string; created_at: string; completed_at: string | null; }
+interface EntryRow { id: string; round_id: string; user_id: string; repo_url: string; description: string; demo_url: string | null; on_chain_entry_id: number | null; created_at: string; }
+interface EscrowRow { id: string; request_id: string; requester_id: string; user_id: string; amount: number; status: string; created_at: string; completed_at: string | null; }
 
 // ============================================================
 // Helpers: DB row → app type (snake_case → camelCase)
 // ============================================================
 
-function toUser(row: UserRow): User {
+function toUser(row: UserRow, badges: SBTBadge[] = []): User {
   return {
     id: row.id,
     address: row.address,
     name: row.name,
     role: row.role as User["role"],
     avatarUrl: row.avatar_url ?? undefined,
-    createdAt: row.created_at,
-  };
-}
-
-function toAgent(row: AgentRow, badges: SBTBadge[]): Agent {
-  return {
-    id: row.id,
-    name: row.name,
     description: row.description,
-    avatarUrl: row.avatar_url ?? undefined,
-    owner: row.owner_id,
     reputation: row.reputation,
     completionRate: row.completion_rate,
     totalTasks: row.total_tasks,
     sbtBadges: badges,
-    skills: row.skills,
+    skills: row.skills ?? [],
     hourlyRate: Number(row.hourly_rate),
     createdAt: row.created_at,
   };
@@ -80,7 +68,7 @@ function toRequest(row: RequestRow, proposalIds: string[]): TaskRequest {
     deadline: row.deadline,
     status: row.status as TaskRequest["status"],
     requesterId: row.requester_id,
-    assignedAgentId: row.assigned_agent_id ?? undefined,
+    assignedUserId: row.assigned_user_id ?? undefined,
     proposals: proposalIds,
     createdAt: row.created_at,
   };
@@ -90,7 +78,7 @@ function toProposal(row: ProposalRow): Proposal {
   return {
     id: row.id,
     requestId: row.request_id,
-    agentId: row.agent_id,
+    userId: row.user_id,
     price: Number(row.price),
     estimatedDays: row.estimated_days,
     message: row.message,
@@ -129,7 +117,7 @@ function toEntry(row: EntryRow): ArenaEntry {
   return {
     id: row.id,
     roundId: row.round_id,
-    agentId: row.agent_id,
+    userId: row.user_id,
     repoUrl: row.repo_url,
     description: row.description,
     demoUrl: row.demo_url ?? undefined,
@@ -143,7 +131,7 @@ function toEscrow(row: EscrowRow): EscrowDeal {
     id: row.id,
     requestId: row.request_id,
     requesterId: row.requester_id,
-    agentId: row.agent_id,
+    userId: row.user_id,
     amount: row.amount,
     status: row.status as EscrowDeal["status"],
     createdAt: row.created_at,
@@ -161,82 +149,41 @@ export async function getUsers(): Promise<User[]> {
     .select("*")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map(toUser);
+  if (!data || data.length === 0) return [];
+
+  const userIds = data.map((u) => u.id);
+  const { data: badgeRows, error: badgeError } = await supabase
+    .from("sbt_badges")
+    .select("*")
+    .in("user_id", userIds);
+  if (badgeError) throw badgeError;
+
+  const badgesByUser = new Map<string, SBTBadge[]>();
+  for (const b of badgeRows ?? []) {
+    const list = badgesByUser.get(b.user_id) ?? [];
+    list.push(toBadge(b));
+    badgesByUser.set(b.user_id, list);
+  }
+
+  return data.map((row) => toUser(row, badgesByUser.get(row.id) ?? []));
 }
 
 export async function getUserById(id: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const { data: row, error } = await supabase
     .from("users")
     .select("*")
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
-  return data ? toUser(data) : null;
-}
-
-// ============================================================
-// Agents
-// ============================================================
-
-export async function getAgents(): Promise<Agent[]> {
-  const { data: agentRows, error: agentError } = await supabase
-    .from("agents")
-    .select("*")
-    .order("reputation", { ascending: false });
-  if (agentError) throw agentError;
-  if (!agentRows || agentRows.length === 0) return [];
-
-  const agentIds = agentRows.map((a) => a.id);
-  const { data: badgeRows, error: badgeError } = await supabase
-    .from("sbt_badges")
-    .select("*")
-    .in("agent_id", agentIds);
-  if (badgeError) throw badgeError;
-
-  const badgesByAgent = new Map<string, SBTBadge[]>();
-  for (const b of badgeRows ?? []) {
-    const list = badgesByAgent.get(b.agent_id) ?? [];
-    list.push(toBadge(b));
-    badgesByAgent.set(b.agent_id, list);
-  }
-
-  return agentRows.map((row) => toAgent(row, badgesByAgent.get(row.id) ?? []));
-}
-
-export async function getAgentById(id: string): Promise<Agent | null> {
-  const { data: row, error } = await supabase
-    .from("agents")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
   if (!row) return null;
 
   const { data: badgeRows, error: badgeError } = await supabase
     .from("sbt_badges")
     .select("*")
-    .eq("agent_id", id);
+    .eq("user_id", id);
   if (badgeError) throw badgeError;
 
-  return toAgent(row, (badgeRows ?? []).map(toBadge));
-}
-
-export async function getAgentByOwner(ownerId: string): Promise<Agent | null> {
-  const { data: row, error } = await supabase
-    .from("agents")
-    .select("*")
-    .eq("owner_id", ownerId)
-    .maybeSingle();
-  if (error) throw error;
-  if (!row) return null;
-
-  const { data: badgeRows, error: badgeError } = await supabase
-    .from("sbt_badges")
-    .select("*")
-    .eq("agent_id", row.id);
-  if (badgeError) throw badgeError;
-
-  return toAgent(row, (badgeRows ?? []).map(toBadge));
+  return toUser(row, (badgeRows ?? []).map(toBadge));
 }
 
 // ============================================================
@@ -306,7 +253,7 @@ export async function createRequest(
       budget: data.budget,
       deadline: data.deadline,
       requester_id: data.requesterId,
-      assigned_agent_id: data.assignedAgentId ?? null,
+      assigned_user_id: data.assignedUserId ?? null,
     })
     .select()
     .single();
@@ -349,11 +296,11 @@ export async function getProposalsByRequest(requestId: string): Promise<Proposal
   return (data ?? []).map(toProposal);
 }
 
-export async function getProposalsByAgent(agentId: string): Promise<Proposal[]> {
+export async function getProposalsByUser(userId: string): Promise<Proposal[]> {
   const { data, error } = await supabase
     .from("proposals")
     .select("*")
-    .eq("agent_id", agentId)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(toProposal);
@@ -366,7 +313,7 @@ export async function submitProposal(
     .from("proposals")
     .insert({
       request_id: data.requestId,
-      agent_id: data.agentId,
+      user_id: data.userId,
       price: data.price,
       estimated_days: data.estimatedDays,
       message: data.message,
@@ -535,7 +482,7 @@ export async function submitEntry(
     .from("arena_entries")
     .insert({
       round_id: data.roundId,
-      agent_id: data.agentId,
+      user_id: data.userId,
       repo_url: data.repoUrl,
       description: data.description,
       demo_url: data.demoUrl ?? null,
@@ -554,7 +501,7 @@ export async function getEscrowsByUser(userId: string): Promise<EscrowDeal[]> {
   const { data, error } = await supabase
     .from("escrow_deals")
     .select("*")
-    .or(`requester_id.eq.${userId},agent_id.eq.${userId}`)
+    .or(`requester_id.eq.${userId},user_id.eq.${userId}`)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(toEscrow);
@@ -568,7 +515,7 @@ export async function createEscrow(
     .insert({
       request_id: data.requestId,
       requester_id: data.requesterId,
-      agent_id: data.agentId,
+      user_id: data.userId,
       amount: data.amount,
     })
     .select()
