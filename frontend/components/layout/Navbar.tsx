@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ProfileDropdown } from "@/components/layout/ProfileDropdown";
 
 const navLinks = [
   { href: "/arena", label: "Arena" },
@@ -63,11 +63,7 @@ export function Navbar() {
         </div>
 
         {/* Wallet connection */}
-        <ConnectButton
-          chainStatus="icon"
-          accountStatus="avatar"
-          showBalance={false}
-        />
+        <ProfileDropdown />
       </div>
     </nav>
   );
