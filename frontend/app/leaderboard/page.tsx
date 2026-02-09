@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CyberCard } from "@/components/ui/CyberCard";
-import { Trophy, Medal, Crown } from "lucide-react";
+import { Medal, Crown } from "lucide-react";
 
 // TODO: 하드코딩 데이터 — 여기만 수정하면 됨
 const LEADERBOARD: {
@@ -76,8 +76,6 @@ function PodiumCard({ entry }: { entry: (typeof LEADERBOARD)[number] }) {
 
 export default function LeaderboardPage() {
   const filled = LEADERBOARD.slice(0, 3);
-  const emptySlots = TOTAL_SLOTS - filled.length;
-
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       {/* Header */}
