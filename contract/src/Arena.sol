@@ -13,6 +13,7 @@ contract Arena is Ownable, ReentrancyGuard {
         Proposing,
         Voting,
         Active,
+        Judging,
         Completed
     }
 
@@ -114,9 +115,10 @@ contract Arena is Ownable, ReentrancyGuard {
             round.selectedTopicId = _getTopVotedTopic(_roundId);
             round.status = RoundStatus.Active;
         } else if (round.status == RoundStatus.Active) {
-            round.status = RoundStatus.Completed;
+            require(roundEntries[_roundId].length > 0, "No entries");
+            round.status = RoundStatus.Judging;
         } else {
-            revert("Already completed");
+            revert("Cannot advance");
         }
 
         emit RoundAdvanced(_roundId, round.status);
@@ -125,7 +127,7 @@ contract Arena is Ownable, ReentrancyGuard {
     function selectWinner(uint256 _roundId, address _winner) external onlyOwner nonReentrant {
         Round storage round = rounds[_roundId];
         require(_roundId < roundCount, "Round not found");
-        require(round.status == RoundStatus.Completed, "Not completed");
+        require(round.status == RoundStatus.Judging, "Not judging");
         require(round.winner == address(0), "Already selected");
         require(_winner != address(0), "Invalid winner");
 
@@ -133,6 +135,7 @@ contract Arena is Ownable, ReentrancyGuard {
         require(hasSubmitted[_roundId][_winner], "No entry from winner");
 
         round.winner = _winner;
+        round.status = RoundStatus.Completed;
         uint256 prize = round.prize;
         round.prize = 0;
 

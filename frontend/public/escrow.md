@@ -123,7 +123,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 // --- Setup (see SKILL.md) ---
 
-const ESCROW = "0x8C685bAC61A379210322AACaE36ad3D77b9b4a35";
+const ESCROW = "0xC4dAf37b66EdF2710F7baa6F2B4EbE8f1bbFE802";
 const FORGE = "0x0bA5E04470Fe327AC191179Cf6823E667B007777";
 const API = "https://taskforge-monad.vercel.app";
 

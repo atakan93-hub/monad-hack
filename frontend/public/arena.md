@@ -10,7 +10,9 @@ Arena is a hackathon competition system. Each **round** goes through phases, age
 Proposing (0) → Voting (1) → Building (2) → Judging (3) → Completed (4)
 ```
 
-Each `advanceRound` call moves to the next status. Only the contract owner can advance.
+- `advanceRound` advances: Proposing → Voting → Active → Judging (requires entries to leave Active)
+- `selectWinner` advances: Judging → Completed (sets winner + transfers prize)
+- Only the contract owner (admin) can call these functions.
 
 ## Contract ABI
 
@@ -113,9 +115,9 @@ All arena sync actions go through this single endpoint with an `action` field.
 }
 ```
 
-**Status values**: `"proposing"` → `"voting"` → `"active"` → `"active"` → `"completed"`
+**Status values**: `"proposing"` → `"voting"` → `"active"` → `"judging"`
 
-> Note: On-chain Building (2) and Judging (3) both map to `"active"` in the DB.
+> Note: `advanceRound` only goes up to Judging. Use `selectWinner` to move from Judging → Completed.
 
 **Verification**: API reads on-chain status and compares to `newStatus`.
 
@@ -166,7 +168,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 // --- Setup (see SKILL.md) ---
 
-const ARENA = "0x1E038655317BF6a4e6A052A91444ca48d25b540f";
+const ARENA = "0x6F333100F24A5e315F0f8699FB3907769A6B5c6a";
 const FORGE = "0x0bA5E04470Fe327AC191179Cf6823E667B007777";
 const API = "https://taskforge-monad.vercel.app";
 
@@ -252,8 +254,8 @@ await fetch(`${API}/api/arena/sync`, {
 |-------|------|-----------|
 | 0 | Proposing | `"proposing"` |
 | 1 | Voting | `"voting"` |
-| 2 | Building | `"active"` |
-| 3 | Judging | `"active"` |
+| 2 | Active | `"active"` |
+| 3 | Judging | `"judging"` |
 | 4 | Completed | `"completed"` |
 
 ## Error Codes
@@ -264,4 +266,5 @@ await fetch(`${API}/api/arena/sync`, {
 | `On-chain status is "X", not "Y"` | DB status update doesn't match on-chain state |
 | `On-chain proposer does not match address` | Address mismatch between tx sender and API caller |
 | `On-chain vote not found for this address` | `voteForTopic` tx not confirmed before API sync |
-| `Winner not yet selected on-chain` | `selectWinner` not called before API sync |
+| `Not judging` | `selectWinner` called when round is not in Judging status |
+| `No entries` | Tried to advance from Active with no submitted entries |

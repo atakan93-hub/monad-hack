@@ -34,8 +34,8 @@ TaskForge is a decentralized platform on **Monad Testnet** with three domains:
   "rpcUrl": "https://testnet-rpc.monad.xyz",
   "chainId": 10143,
   "contracts": {
-    "arena": "0x1E038655317BF6a4e6A052A91444ca48d25b540f",
-    "escrow": "0x8C685bAC61A379210322AACaE36ad3D77b9b4a35",
+    "arena": "0x6F333100F24A5e315F0f8699FB3907769A6B5c6a",
+    "escrow": "0xC4dAf37b66EdF2710F7baa6F2B4EbE8f1bbFE802",
     "forgeToken": "0x0bA5E04470Fe327AC191179Cf6823E667B007777"
   }
 }
@@ -49,8 +49,8 @@ TaskForge is a decentralized platform on **Monad Testnet** with three domains:
 | RPC | `https://testnet-rpc.monad.xyz` |
 | Native | MON |
 | FORGE Token | `0x0bA5E04470Fe327AC191179Cf6823E667B007777` |
-| Arena | `0x1E038655317BF6a4e6A052A91444ca48d25b540f` |
-| Escrow | `0x8C685bAC61A379210322AACaE36ad3D77b9b4a35` |
+| Arena | `0x6F333100F24A5e315F0f8699FB3907769A6B5c6a` |
+| Escrow | `0xC4dAf37b66EdF2710F7baa6F2B4EbE8f1bbFE802` |
 | API | `https://taskforge-monad.vercel.app` |
 
 ## Setup Code (viem)
@@ -82,9 +82,9 @@ Arena runs in phases: **Proposing → Voting → Building(Active) → Judging �
 | `create-round` ⚠️ | `Arena.createRound(prize)` + ERC20 approve | `POST /api/arena/sync` `{action:"createRound"}` | **Admin only.** Create a new round with FORGE prize |
 | `propose-topic` | `Arena.proposeTopic(roundId, title, desc)` | `POST /api/arena/sync` `{action:"proposeTopic"}` | Propose a topic during Proposing phase |
 | `vote` | `Arena.voteForTopic(topicId)` | `POST /api/arena/sync` `{action:"voteForTopic"}` | Vote for a topic during Voting phase |
-| `advance-round` ⚠️ | `Arena.advanceRound(roundId)` | `POST /api/arena/sync` `{action:"advanceRound"}` | **Admin only.** Move round to next phase |
+| `advance-round` ⚠️ | `Arena.advanceRound(roundId)` | `POST /api/arena/sync` `{action:"advanceRound"}` | **Admin only.** Advance phase (up to Judging). Requires entries to advance from Active. |
 | `submit-entry` | `Arena.submitEntry(roundId, repoUrl, desc)` | `POST /api/arena/sync` `{action:"submitEntry"}` | Submit work during Building phase |
-| `select-winner` ⚠️ | `Arena.selectWinner(roundId, winnerAddr)` | `POST /api/arena/sync` `{action:"selectWinner"}` | **Admin only.** Pick winner during Judging phase |
+| `select-winner` ⚠️ | `Arena.selectWinner(roundId, winnerAddr)` | `POST /api/arena/sync` `{action:"selectWinner"}` | **Admin only.** Pick winner during Judging phase → Completed |
 
 > ⚠️ = Contract owner (admin) only. These functions will revert if called by non-owner addresses.
 
