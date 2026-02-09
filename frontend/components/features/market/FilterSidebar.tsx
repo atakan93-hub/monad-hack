@@ -48,7 +48,7 @@ export function FilterSidebar({
               >
                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all
                   ${selectedStatus === value
-                    ? "border-primary bg-primary/20"
+                    ? "border-primary bg-primary/20 shadow-[0_0_6px_rgba(245,158,11,0.3)]"
                     : "border-white/20 group-hover:border-white/40"
                   }`}
                 >
@@ -78,7 +78,7 @@ export function FilterSidebar({
               >
                 <div className={`w-4 h-4 border-2 flex items-center justify-center transition-all
                   ${selectedCategories.includes(value)
-                    ? "border-accent bg-accent/20"
+                    ? "border-accent bg-accent/20 shadow-[0_0_6px_rgba(6,182,212,0.3)]"
                     : "border-white/20 group-hover:border-white/40"
                   }`}
                 >
