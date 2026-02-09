@@ -22,7 +22,7 @@ import {
   getEntriesByRound,
   getUserById,
 } from "@/lib/supabase-api";
-import { useVoteForTopic, useProposeTopic, useHasVoted } from "@/lib/hooks/useArena";
+import { useVoteForTopic, useProposeTopic, useSubmitEntry, useHasVoted } from "@/lib/hooks/useArena";
 import { useForgeBalance } from "@/lib/hooks/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import { formatUnits, decodeEventLog } from "viem";
@@ -68,6 +68,7 @@ export default function ArenaPage() {
   // wagmi write hooks
   const voteHook = useVoteForTopic();
   const proposeHook = useProposeTopic();
+  const entryHook = useSubmitEntry();
 
   // Voting power: FORGE balance + already voted check
   const roundIdNum = selectedRound?.onChainRoundId != null
@@ -78,13 +79,18 @@ export default function ArenaPage() {
   const votingPower = forgeBalance ? Number(formatUnits(forgeBalance, 18)) : 0;
   const canVote = isConnected && votingPower > 0 && !alreadyVoted;
 
-  // Track which topic/round is being voted/proposed for Supabase sync
+  // Track which topic/round is being voted/proposed/submitted for Supabase sync
   const pendingVoteTopicId = useRef<string | null>(null);
   const pendingProposeData = useRef<{ title: string; description: string } | null>(null);
+  const pendingEntryData = useRef<{ repoUrl: string; description: string } | null>(null);
 
   // Topic proposal form
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
+
+  // Entry submission form
+  const [entryRepoUrl, setEntryRepoUrl] = useState("");
+  const [entryDescription, setEntryDescription] = useState("");
 
   const loadRounds = useCallback(async () => {
     const data = await getRounds(
@@ -107,6 +113,8 @@ export default function ArenaPage() {
 
   useEffect(() => {
     loadRounds();
+    const interval = setInterval(loadRounds, 30_000);
+    return () => clearInterval(interval);
   }, [loadRounds]);
 
   const openRound = async (roundId: string) => {
@@ -238,6 +246,72 @@ export default function ArenaPage() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposeHook.isSuccess]);
+
+  const handleSubmitEntry = async () => {
+    if (!selectedRound || !entryRepoUrl.trim()) return;
+    if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
+      pendingEntryData.current = { repoUrl: entryRepoUrl.trim(), description: entryDescription.trim() };
+      entryHook.write(
+        BigInt(selectedRound.onChainRoundId),
+        entryRepoUrl.trim(),
+        entryDescription.trim(),
+      );
+      setEntryRepoUrl("");
+      setEntryDescription("");
+    } else {
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submitEntry",
+          roundId: selectedRound.id,
+          address,
+          repoUrl: entryRepoUrl.trim(),
+          description: entryDescription.trim(),
+        }),
+      });
+      setEntryRepoUrl("");
+      setEntryDescription("");
+      const e = await getEntriesByRound(selectedRound.id);
+      setEntries(e);
+    }
+  };
+
+  // Sync DB after on-chain entry submission
+  useEffect(() => {
+    if (!entryHook.isSuccess || !entryHook.receipt || !selectedRound || !pendingEntryData.current) return;
+    const data = pendingEntryData.current;
+    pendingEntryData.current = null;
+
+    let onChainEntryId: string | undefined;
+    for (const log of entryHook.receipt.logs) {
+      try {
+        const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+        if (decoded.eventName === "EntrySubmitted") {
+          onChainEntryId = String((decoded.args as { entryId: bigint }).entryId);
+          break;
+        }
+      } catch { /* not our event */ }
+    }
+
+    (async () => {
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "submitEntry",
+          roundId: selectedRound.id,
+          address,
+          repoUrl: data.repoUrl,
+          description: data.description,
+          onChainEntryId,
+        }),
+      });
+      const e = await getEntriesByRound(selectedRound.id);
+      setEntries(e);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entryHook.isSuccess]);
 
   const selectedTopic = topics.find(
     (t) => t.id === selectedRound?.selectedTopicId
@@ -424,6 +498,30 @@ export default function ArenaPage() {
                     <p className="text-sm text-muted-foreground">
                       No entries submitted yet.
                     </p>
+                  )}
+
+                  {/* Entry submission form */}
+                  {isConnected && (
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <h4 className="font-semibold text-sm">Submit Entry</h4>
+                      <Input
+                        placeholder="Repository URL"
+                        value={entryRepoUrl}
+                        onChange={(e) => setEntryRepoUrl(e.target.value)}
+                      />
+                      <Input
+                        placeholder="Description"
+                        value={entryDescription}
+                        onChange={(e) => setEntryDescription(e.target.value)}
+                      />
+                      <Button
+                        size="sm"
+                        onClick={handleSubmitEntry}
+                        disabled={!entryRepoUrl.trim() || entryHook.isPending || entryHook.isConfirming}
+                      >
+                        {entryHook.isPending ? "Sign tx..." : entryHook.isConfirming ? "Confirming..." : "Submit Entry"}
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}

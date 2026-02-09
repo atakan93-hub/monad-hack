@@ -1,5 +1,6 @@
 import { createPublicClient, http, defineChain } from "viem";
 import { ArenaAbi } from "./contracts/ArenaAbi";
+import { EscrowAbi } from "./contracts/EscrowAbi";
 import { CONTRACT_ADDRESSES } from "./contracts/addresses";
 
 const MONAD_CHAIN_ID = 10143;
@@ -17,6 +18,7 @@ const client = createPublicClient({
 });
 
 const arenaAddress = CONTRACT_ADDRESSES.ARENA as `0x${string}`;
+const escrowAddress = CONTRACT_ADDRESSES.ESCROW as `0x${string}`;
 
 /** Verify we're talking to the right chain */
 export async function verifyChainId(): Promise<void> {
@@ -56,5 +58,16 @@ export async function getHasVotedOnChain(roundId: bigint, voter: string) {
     abi: ArenaAbi,
     functionName: "hasVoted",
     args: [roundId, voter as `0x${string}`],
+  });
+}
+
+/** deals(dealId) → [client, agent, amount, deadline, status] */
+export async function getOnChainDeal(dealId: bigint) {
+  await verifyChainId();
+  return client.readContract({
+    address: escrowAddress,
+    abi: EscrowAbi,
+    functionName: "deals",
+    args: [dealId],
   });
 }

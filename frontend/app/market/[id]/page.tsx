@@ -16,6 +16,8 @@ import {
 } from "@/lib/supabase-api";
 import { useCreateDeal } from "@/lib/hooks/useEscrow";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
+import { EscrowAbi } from "@/lib/contracts/EscrowAbi";
+import { decodeEventLog } from "viem";
 import type { TaskRequest, Proposal, User } from "@/lib/types";
 
 const isOnChain = CONTRACT_ADDRESSES.ESCROW !== "0x0000000000000000000000000000000000000000";
@@ -68,6 +70,8 @@ export default function RequestDetailPage() {
       }
     }
     load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
   }, [id]);
 
   const handleSubmitProposal = async (data: {
@@ -100,32 +104,68 @@ export default function RequestDetailPage() {
       const amount = BigInt(prop.price) * BigInt(10 ** 18);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + prop.estimatedDays * 86400);
       createDeal.write(agentAddr, amount, deadline);
+    } else {
+      // Off-chain only: update proposal + create escrow directly
+      await fetch("/api/market/proposals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "updateStatus", proposalId, status: "accepted" }),
+      });
+      if (prop) {
+        await fetch("/api/escrow/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "createEscrow", address, requestId: id, userId: prop.userId, amount: prop.price }),
+        });
+      }
+      const props = await getProposalsByRequest(id);
+      const withUsers = await Promise.all(
+        props.map(async (p) => ({ ...p, proposer: await getUserById(p.userId) }))
+      );
+      setProposals(withUsers);
     }
-    await fetch("/api/market/proposals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "updateStatus", proposalId, status: "accepted" }),
-    });
-    const props = await getProposalsByRequest(id);
-    const withUsers = await Promise.all(
-      props.map(async (p) => ({
-        ...p,
-        proposer: await getUserById(p.userId),
-      }))
-    );
-    setProposals(withUsers);
   };
 
   // Sync escrow to DB after on-chain deal creation
   useEffect(() => {
-    if (!createDeal.isSuccess || !pendingAccept.current || !address) return;
+    if (!createDeal.isSuccess || !createDeal.receipt || !pendingAccept.current || !address) return;
     const { requestId, userId, amount } = pendingAccept.current;
     pendingAccept.current = null;
-    fetch("/api/escrow/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "createEscrow", address, requestId, userId, amount }),
-    });
+
+    // Decode DealCreated event to extract on-chain dealId
+    let onChainDealId: string | undefined;
+    for (const log of createDeal.receipt.logs) {
+      try {
+        const decoded = decodeEventLog({ abi: EscrowAbi, data: log.data, topics: log.topics });
+        if (decoded.eventName === "DealCreated") {
+          onChainDealId = String((decoded.args as { dealId: bigint }).dealId);
+          break;
+        }
+      } catch { /* not our event */ }
+    }
+
+    (async () => {
+      // Update proposal status
+      const prop = proposals.find((p) => p.userId === userId);
+      if (prop) {
+        await fetch("/api/market/proposals", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "updateStatus", proposalId: prop.id, status: "accepted" }),
+        });
+      }
+      // Create escrow record with on-chain ID
+      await fetch("/api/escrow/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createEscrow", address, requestId, userId, amount, onChainDealId }),
+      });
+      const props = await getProposalsByRequest(id);
+      const withUsers = await Promise.all(
+        props.map(async (p) => ({ ...p, proposer: await getUserById(p.userId) }))
+      );
+      setProposals(withUsers);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createDeal.isSuccess]);
 

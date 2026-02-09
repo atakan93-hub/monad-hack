@@ -11,12 +11,12 @@ const escrowConfig = {
 
 export function useCreateDeal() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const write = (agent: `0x${string}`, amount: bigint, deadline: bigint) =>
     writeContract({ ...escrowConfig, functionName: "createDeal", args: [agent, amount, deadline] });
 
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  return { write, hash, receipt, isPending, isConfirming, isSuccess, error };
 }
 
 export function useFundDeal() {

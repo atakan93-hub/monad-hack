@@ -103,6 +103,7 @@ export interface EscrowDeal {
   userId: string;
   amount: number;
   status: DealStatus;
+  onChainDealId?: number;
   createdAt: string;
   completedAt?: string;
 }

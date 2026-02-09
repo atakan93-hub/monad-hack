@@ -122,6 +122,7 @@ CREATE TABLE arena_entries (
   repo_url text NOT NULL,
   description text DEFAULT '',
   demo_url text,
+  on_chain_entry_id integer,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -136,6 +137,7 @@ CREATE TABLE escrow_deals (
   user_id text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   amount numeric NOT NULL DEFAULT 0,
   status text NOT NULL DEFAULT 'created' CHECK (status IN ('created', 'funded', 'completed', 'disputed', 'refunded')),
+  on_chain_deal_id integer,
   created_at timestamptz DEFAULT now(),
   completed_at timestamptz,
   updated_at timestamptz DEFAULT now()

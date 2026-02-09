@@ -25,7 +25,7 @@ interface ProposalRow { id: string; request_id: string; user_id: string; price: 
 interface RoundRow { id: string; round_number: number; prize: number; status: string; selected_topic_id: string | null; winner_id: string | null; on_chain_round_id: number | null; created_at: string; }
 interface TopicRow { id: string; round_id: string; proposer_id: string; title: string; description: string; total_votes: number; on_chain_topic_id: number | null; created_at: string; }
 interface EntryRow { id: string; round_id: string; user_id: string; repo_url: string; description: string; demo_url: string | null; on_chain_entry_id: number | null; created_at: string; }
-interface EscrowRow { id: string; request_id: string; requester_id: string; user_id: string; amount: number; status: string; created_at: string; completed_at: string | null; }
+interface EscrowRow { id: string; request_id: string; requester_id: string; user_id: string; amount: number; status: string; on_chain_deal_id: number | null; created_at: string; completed_at: string | null; }
 
 // ============================================================
 // Helpers: DB row → app type (snake_case → camelCase)
@@ -134,6 +134,7 @@ function toEscrow(row: EscrowRow): EscrowDeal {
     userId: row.user_id,
     amount: row.amount,
     status: row.status as EscrowDeal["status"],
+    onChainDealId: row.on_chain_deal_id ?? undefined,
     createdAt: row.created_at,
     completedAt: row.completed_at ?? undefined,
   };

@@ -43,6 +43,8 @@ export default function MarketPage() {
 
   useEffect(() => {
     loadRequests();
+    const interval = setInterval(loadRequests, 30_000);
+    return () => clearInterval(interval);
   }, [loadRequests]);
 
   const handleCategoryToggle = (cat: RequestCategory) => {

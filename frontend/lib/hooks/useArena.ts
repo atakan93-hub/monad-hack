@@ -13,12 +13,12 @@ const arenaConfig = {
 
 export function useCreateRound() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const write = (prize: bigint) =>
     writeContract({ ...arenaConfig, functionName: "createRound", args: [prize] });
 
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  return { write, hash, receipt, isPending, isConfirming, isSuccess, error };
 }
 
 export function useAdvanceRound() {
@@ -68,12 +68,12 @@ export function useVoteForTopic() {
 
 export function useSubmitEntry() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
   const write = (roundId: bigint, repoUrl: string, description: string) =>
     writeContract({ ...arenaConfig, functionName: "submitEntry", args: [roundId, repoUrl, description] });
 
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  return { write, hash, receipt, isPending, isConfirming, isSuccess, error };
 }
 
 // === Read ===

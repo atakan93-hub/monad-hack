@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { parseUnits } from "viem";
+import { parseUnits, decodeEventLog } from "viem";
 import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
 import { useCreateRound, useAdvanceRound, useSelectWinner } from "@/lib/hooks/useArena";
 import {
@@ -91,7 +91,7 @@ export default function AdminPage() {
   });
 
   // Read on-chain roundCount
-  const { data: onChainRoundCount, refetch: refetchRoundCount } = useReadContract({
+  const { refetch: refetchRoundCount } = useReadContract({
     address: CONTRACT_ADDRESSES.ARENA,
     abi: ArenaAbi,
     functionName: "roundCount",
@@ -134,19 +134,29 @@ export default function AdminPage() {
 
   // After createRound success → sync DB via API
   useEffect(() => {
-    if (!createRound.isSuccess) return;
+    if (!createRound.isSuccess || !createRound.receipt) return;
+
+    // Decode RoundCreated event to get on-chain roundId
+    let onChainRoundId: number | undefined;
+    for (const log of createRound.receipt.logs) {
+      try {
+        const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+        if (decoded.eventName === "RoundCreated") {
+          onChainRoundId = Number((decoded.args as { roundId: bigint }).roundId);
+          break;
+        }
+      } catch { /* not our event */ }
+    }
+
+    if (onChainRoundId == null) return;
 
     (async () => {
-      const count = onChainRoundCount as bigint | undefined;
-      const roundNum = count ? Number(count) : rounds.length + 1;
-
       await fetch("/api/arena/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "createRound",
-          roundNumber: roundNum,
-          prize: Number(prizeAmount),
+          onChainRoundId,
         }),
       });
 
@@ -162,10 +172,11 @@ export default function AdminPage() {
   const [advancingNewStatus, setAdvancingNewStatus] = useState<string | null>(null);
 
   function handleAdvance(round: Round) {
+    if (round.onChainRoundId == null) return;
     const nextStatus = round.status === "proposing" ? "voting" : "active";
     setAdvancingRoundId(round.id);
     setAdvancingNewStatus(nextStatus);
-    advanceRound.write(BigInt(round.roundNumber));
+    advanceRound.write(BigInt(round.onChainRoundId));
   }
 
   useEffect(() => {
@@ -207,10 +218,10 @@ export default function AdminPage() {
   }
 
   function handleSelectWinner(entry: ArenaEntry & { user?: User }) {
-    if (!winnerRound || !entry.user) return;
+    if (!winnerRound || !entry.user || winnerRound.onChainRoundId == null) return;
     setSelectedWinnerUserId(entry.userId);
     selectWinner.write(
-      BigInt(winnerRound.roundNumber),
+      BigInt(winnerRound.onChainRoundId),
       entry.user.address as `0x${string}`
     );
   }

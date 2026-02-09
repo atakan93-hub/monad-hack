@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
         if (roundErr) throw roundErr;
         if (roundRow.on_chain_round_id != null) {
           const onChainRound = await getOnChainRound(BigInt(roundRow.on_chain_round_id));
-          // status enum: 0=Proposing, 1=Voting, 2=Building, 3=Judging, 4=Completed
-          const statusMap: Record<number, string> = { 0: "proposing", 1: "voting", 2: "building", 3: "judging", 4: "completed" };
+          // status enum: 0=Proposing, 1=Voting, 2=Building(active), 3=Judging(active), 4=Completed
+          const statusMap: Record<number, string> = { 0: "proposing", 1: "voting", 2: "active", 3: "active", 4: "completed" };
           const onChainStatus = statusMap[Number(onChainRound[3])] ?? "unknown";
           if (onChainStatus !== newStatus) {
             return NextResponse.json(
@@ -131,6 +131,24 @@ export async function POST(req: NextRequest) {
           .from("topics")
           .select("*")
           .eq("id", topicId)
+          .single();
+        if (error) throw error;
+        return NextResponse.json(data);
+      }
+
+      case "submitEntry": {
+        const { roundId, address, repoUrl, description, onChainEntryId } = body;
+        const userId = await resolveUserId(address);
+        const { data, error } = await supabase
+          .from("arena_entries")
+          .insert({
+            round_id: roundId,
+            user_id: userId,
+            repo_url: repoUrl,
+            description: description ?? "",
+            on_chain_entry_id: onChainEntryId != null ? Number(onChainEntryId) : null,
+          })
+          .select()
           .single();
         if (error) throw error;
         return NextResponse.json(data);
