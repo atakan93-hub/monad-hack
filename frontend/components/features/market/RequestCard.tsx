@@ -46,7 +46,7 @@ export function RequestCard({ request }: RequestCardProps) {
 
   return (
     <Link href={`/market/${request.id}`}>
-      <CyberCard className="cursor-pointer h-full p-5 flex flex-col gap-3">
+      <CyberCard className="cursor-pointer h-full p-5 flex flex-col gap-3 card-hover-glow">
         <div className="relative z-[1] flex flex-col gap-3 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <CatIcon className={`w-4 h-4 ${cat.color}`} />

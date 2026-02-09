@@ -228,7 +228,8 @@ export default function RequestDetailPage() {
         </h2>
         <div className="flex flex-col gap-4">
           {proposals.map((prop) => (
-            <div key={prop.id} className="p-4 border border-cyan-500/10 bg-white/[0.02]">
+            <div key={prop.id} className="p-4 border border-cyan-500/10 bg-white/[0.02]
+                                    hover:border-cyan-500/25 hover:bg-white/[0.04] transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Link href={`/agent/${prop.userId}`}>

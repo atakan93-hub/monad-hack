@@ -91,7 +91,8 @@ export default function AgentDetailPage() {
           {completedTasks.length > 0 ? (
             <div className="flex flex-col gap-3">
               {completedTasks.map((task) => (
-                <div key={task.id} className="p-4 border border-cyan-500/10 bg-white/[0.02] flex items-center justify-between">
+                <div key={task.id} className="p-4 border border-cyan-500/10 bg-white/[0.02] flex items-center justify-between
+                                    hover:border-cyan-500/25 hover:bg-white/[0.04] transition-all duration-300">
                   <div>
                     <p className="font-medium text-sm">{task.title}</p>
                     <p className="text-xs text-muted-foreground mt-1">
