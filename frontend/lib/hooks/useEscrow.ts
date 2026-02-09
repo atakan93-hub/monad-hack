@@ -51,6 +51,18 @@ export function useReleaseFunds() {
   return { writeAsync, ...rest };
 }
 
+export function useDisputeDeal() {
+  const { sendAndWait, ...rest } = useEscrowWrite();
+  const writeAsync = (dealId: bigint) => sendAndWait("dispute", [dealId]);
+  return { writeAsync, ...rest };
+}
+
+export function useRefundDeal() {
+  const { sendAndWait, ...rest } = useEscrowWrite();
+  const writeAsync = (dealId: bigint) => sendAndWait("refund", [dealId]);
+  return { writeAsync, ...rest };
+}
+
 export function useGetDeal(dealId: bigint) {
   return useReadContract({
     ...escrowConfig,

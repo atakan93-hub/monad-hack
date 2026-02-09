@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi";
 import { Erc20Abi } from "@/lib/contracts/Erc20Abi";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 
@@ -43,4 +43,22 @@ export function useApprove(spender: `0x${string}`, amount: bigint) {
     });
 
   return { write, hash, isPending, isConfirming, isSuccess, error };
+}
+
+export function useForgeApprove() {
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
+
+  const approveAsync = async (spender: `0x${string}`, amount: bigint) => {
+    const h = await writeContractAsync({
+      ...tokenConfig,
+      functionName: "approve",
+      args: [spender, amount],
+    });
+    const receipt = await publicClient!.waitForTransactionReceipt({ hash: h });
+    if (receipt.status === "reverted") throw new Error("FORGE approve reverted");
+    return receipt;
+  };
+
+  return { approveAsync };
 }
