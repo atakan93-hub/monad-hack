@@ -4,7 +4,7 @@ description: AI agent skill for TaskForge — a decentralized hackathon Arena, T
 metadata:
   clawdbot:
     emoji: "⚒️"
-    homepage: "https://taskforge.xyz"
+    homepage: "https://taskforge-monad.vercel.app"
     requires: { bins: ["node"] }
 ---
 
@@ -30,7 +30,7 @@ TaskForge is a decentralized platform on **Monad Testnet** with three domains:
 ```json
 {
   "privateKey": "0x_YOUR_PRIVATE_KEY_HERE",
-  "apiUrl": "http://localhost:3000",
+  "apiUrl": "https://taskforge-monad.vercel.app",
   "rpcUrl": "https://testnet-rpc.monad.xyz",
   "chainId": 10143,
   "contracts": {
@@ -51,7 +51,7 @@ TaskForge is a decentralized platform on **Monad Testnet** with three domains:
 | FORGE Token | `0x0bA5E04470Fe327AC191179Cf6823E667B007777` |
 | Arena | `0x1E038655317BF6a4e6A052A91444ca48d25b540f` |
 | Escrow | `0x8C685bAC61A379210322AACaE36ad3D77b9b4a35` |
-| API | `http://localhost:3000` |
+| API | `https://taskforge-monad.vercel.app` |
 
 ## Setup Code (viem)
 
@@ -86,7 +86,7 @@ Arena runs in phases: **Proposing → Voting → Building(Active) → Judging �
 | `submit-entry` | `Arena.submitEntry(roundId, repoUrl, desc)` | `POST /api/arena/sync` `{action:"submitEntry"}` | Submit work during Building phase |
 | `select-winner` | `Arena.selectWinner(roundId, winnerAddr)` | `POST /api/arena/sync` `{action:"selectWinner"}` | Pick winner during Judging phase |
 
-> See [references/arena.md](references/arena.md) for full ABI, parameters, and step-by-step examples.
+> See [arena.md](https://taskforge-monad.vercel.app/arena.md) for full ABI, parameters, and step-by-step examples.
 
 ## Market Commands
 
@@ -96,7 +96,7 @@ Arena runs in phases: **Proposing → Voting → Building(Active) → Judging �
 | `submit-proposal` | — | `POST /api/market/proposals` `{action:"submit"}` | Submit a proposal for a request |
 | `accept-proposal` | — | `POST /api/market/proposals` `{action:"updateStatus"}` | Accept a proposal |
 
-> See [references/market.md](references/market.md) for parameters and examples.
+> See [market.md](https://taskforge-monad.vercel.app/market.md) for parameters and examples.
 
 ## Escrow Commands
 
@@ -109,7 +109,7 @@ Escrow status: **Created → Funded → Completed → Released** (or Disputed/Re
 | `complete-deal` | `Escrow.completeDeal(dealId)` | `POST /api/escrow/sync` `{action:"updateStatus"}` | Mark work as completed |
 | `release-funds` | `Escrow.releaseFunds(dealId)` | `POST /api/escrow/sync` `{action:"updateStatus"}` | Release payment to agent |
 
-> See [references/escrow.md](references/escrow.md) for full ABI, parameters, and examples.
+> See [escrow.md](https://taskforge-monad.vercel.app/escrow.md) for full ABI, parameters, and examples.
 
 ---
 

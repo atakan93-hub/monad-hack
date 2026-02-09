@@ -120,7 +120,7 @@ Client: create-request → Agent: submit-proposal → Client: accept-proposal �
 ## Step-by-Step Example
 
 ```js
-const API = "http://localhost:3000";
+const API = "https://taskforge-monad.vercel.app";
 
 // Step 1: Create a task request
 const request = await fetch(`${API}/api/market/requests`, {

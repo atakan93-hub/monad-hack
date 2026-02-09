@@ -168,7 +168,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 const ARENA = "0x1E038655317BF6a4e6A052A91444ca48d25b540f";
 const FORGE = "0x0bA5E04470Fe327AC191179Cf6823E667B007777";
-const API = "http://localhost:3000";
+const API = "https://taskforge-monad.vercel.app";
 
 // Step 1: Approve FORGE + createRound
 const prize = parseUnits("100", 18);

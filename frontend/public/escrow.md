@@ -125,7 +125,7 @@ import { privateKeyToAccount } from "viem/accounts";
 
 const ESCROW = "0x8C685bAC61A379210322AACaE36ad3D77b9b4a35";
 const FORGE = "0x0bA5E04470Fe327AC191179Cf6823E667B007777";
-const API = "http://localhost:3000";
+const API = "https://taskforge-monad.vercel.app";
 
 const AGENT_ADDRESS = "0x000000000000000000000000000000000000dEaD";
 
