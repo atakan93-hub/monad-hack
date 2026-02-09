@@ -157,6 +157,13 @@
   color: #FAFAFA;
 }
 
+/* === Input / Textarea focus glow === */
+input:focus,
+textarea:focus {
+  border-color: rgba(6, 182, 212, 0.4) !important;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.15);
+}
+
 /* === Glassmorphism === */
 .glass {
   background: rgba(255, 255, 255, 0.03);
