@@ -39,19 +39,21 @@ const STATUS_LABELS: Record<string, string> = {
   proposing: "Proposing",
   voting: "Voting",
   active: "Active",
+  judging: "Judging",
   completed: "Completed",
 };
 
 const STATUS_NEXT: Record<string, string> = {
   proposing: "Voting",
   voting: "Active",
-  active: "Completed",
+  active: "Judging",
 };
 
 const statusColors: Record<string, string> = {
   proposing: "bg-accent/20 text-accent border-accent/30",
   voting: "bg-purple-500/20 text-purple-400 border-purple-500/30",
   active: "bg-primary/20 text-primary border-primary/30",
+  judging: "bg-orange-500/20 text-orange-400 border-orange-500/30",
   completed: "bg-green-500/20 text-green-400 border-green-500/30",
 };
 
@@ -62,6 +64,8 @@ export default function AdminPage() {
   const [prizeAmount, setPrizeAmount] = useState("");
   const [rounds, setRounds] = useState<Round[]>([]);
   const [isLoadingRounds, setIsLoadingRounds] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Winner selector state
   const [winnerRound, setWinnerRound] = useState<Round | null>(null);
@@ -127,132 +131,140 @@ export default function AdminPage() {
     if (approveSuccess) refetchAllowance();
   }, [approveSuccess, refetchAllowance]);
 
-  function handleCreateRound() {
+  async function handleCreateRound() {
     if (!prizeAmount || prizeWei === 0n) return;
-    createRound.write(prizeWei);
-  }
+    setSyncError(null);
+    setIsSyncing(true);
+    try {
+      const receipt = await createRound.writeAsync(prizeWei);
 
-  useEffect(() => {
-    if (!createRound.isSuccess || !createRound.receipt) return;
+      let onChainRoundId: number | undefined;
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+          if (decoded.eventName === "RoundCreated") {
+            onChainRoundId = Number((decoded.args as { roundId: bigint }).roundId);
+            break;
+          }
+        } catch { /* not our event */ }
+      }
 
-    let onChainRoundId: number | undefined;
-    for (const log of createRound.receipt.logs) {
-      try {
-        const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
-        if (decoded.eventName === "RoundCreated") {
-          onChainRoundId = Number((decoded.args as { roundId: bigint }).roundId);
-          break;
-        }
-      } catch { /* not our event */ }
-    }
+      if (onChainRoundId == null) throw new Error("RoundCreated event not found in tx logs");
 
-    if (onChainRoundId == null) return;
-
-    (async () => {
-      await fetch("/api/arena/sync", {
+      const syncRes = await fetch("/api/arena/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "createRound",
-          onChainRoundId,
-        }),
+        body: JSON.stringify({ action: "createRound", onChainRoundId }),
       });
+      if (!syncRes.ok) {
+        const err = await syncRes.json().catch(() => ({}));
+        throw new Error(err.error ?? `Sync failed (${syncRes.status})`);
+      }
 
       setPrizeAmount("");
       refetchRoundCount();
-      loadRounds();
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [createRound.isSuccess]);
+      await loadRounds();
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Transaction failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   // Advance round
-  const [advancingRoundId, setAdvancingRoundId] = useState<string | null>(null);
-  const [advancingNewStatus, setAdvancingNewStatus] = useState<string | null>(null);
-
-  function handleAdvance(round: Round) {
+  async function handleAdvance(round: Round) {
     if (round.onChainRoundId == null) return;
     const statusNextMap: Record<string, string> = {
       proposing: "voting",
       voting: "active",
-      active: "completed",
+      active: "judging",
     };
     const nextStatus = statusNextMap[round.status];
     if (!nextStatus) return;
-    setAdvancingRoundId(round.id);
-    setAdvancingNewStatus(nextStatus);
-    advanceRound.write(BigInt(round.onChainRoundId));
-  }
 
-  useEffect(() => {
-    if (!advanceRound.isSuccess || !advancingRoundId || !advancingNewStatus) return;
+    setSyncError(null);
+    setIsSyncing(true);
+    try {
+      await advanceRound.writeAsync(BigInt(round.onChainRoundId));
 
-    (async () => {
-      await fetch("/api/arena/sync", {
+      const syncRes = await fetch("/api/arena/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "advanceRound",
-          roundId: advancingRoundId,
-          newStatus: advancingNewStatus,
+          roundId: round.id,
+          newStatus: nextStatus,
         }),
       });
-      setAdvancingRoundId(null);
-      setAdvancingNewStatus(null);
-      loadRounds();
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [advanceRound.isSuccess]);
+      if (!syncRes.ok) {
+        const err = await syncRes.json().catch(() => ({}));
+        throw new Error(err.error ?? `Sync failed (${syncRes.status})`);
+      }
+      await loadRounds();
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Transaction failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   // Select winner
   async function openWinnerSelector(round: Round) {
     setWinnerRound(round);
     setIsLoadingEntries(true);
+    try {
+      const entryList = await getEntriesByRound(round.id);
 
-    const entryList = await getEntriesByRound(round.id);
+      const enriched = await Promise.all(
+        entryList.map(async (entry) => {
+          const u = await getUserById(entry.userId);
+          return { ...entry, user: u ?? undefined };
+        })
+      );
 
-    const enriched = await Promise.all(
-      entryList.map(async (entry) => {
-        const u = await getUserById(entry.userId);
-        return { ...entry, user: u ?? undefined };
-      })
-    );
-
-    setEntries(enriched);
-    setIsLoadingEntries(false);
+      setEntries(enriched);
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Failed to load entries");
+    } finally {
+      setIsLoadingEntries(false);
+    }
   }
 
-  function handleSelectWinner(entry: ArenaEntry & { user?: User }) {
+  async function handleSelectWinner(entry: ArenaEntry & { user?: User }) {
     if (!winnerRound || !entry.user || winnerRound.onChainRoundId == null) return;
-    setSelectedWinnerUserId(entry.userId);
-    selectWinner.write(
-      BigInt(winnerRound.onChainRoundId),
-      entry.user.address as `0x${string}`
-    );
-  }
 
-  const [selectedWinnerUserId, setSelectedWinnerUserId] = useState<string | null>(null);
+    setSyncError(null);
+    setIsSyncing(true);
+    try {
+      await selectWinner.writeAsync(
+        BigInt(winnerRound.onChainRoundId),
+        entry.user.address as `0x${string}`
+      );
 
-  useEffect(() => {
-    if (!selectWinner.isSuccess || !winnerRound || !selectedWinnerUserId) return;
-
-    (async () => {
-      await fetch("/api/arena/sync", {
+      const syncRes = await fetch("/api/arena/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "selectWinner",
           roundId: winnerRound.id,
-          winnerId: selectedWinnerUserId,
+          winnerId: entry.userId,
         }),
       });
+      if (!syncRes.ok) {
+        const err = await syncRes.json().catch(() => ({}));
+        throw new Error(err.error ?? `Sync failed (${syncRes.status})`);
+      }
 
-      setSelectedWinnerUserId(null);
       setWinnerRound(null);
       setEntries([]);
-      loadRounds();
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectWinner.isSuccess]);
+      await loadRounds();
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Transaction failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
 
   // Access control
   if (adminLoading) {
@@ -335,10 +347,10 @@ export default function AdminPage() {
             ) : (
               <Button
                 onClick={handleCreateRound}
-                disabled={!prizeAmount || prizeWei === 0n || createRound.isPending || createRound.isConfirming}
+                disabled={!prizeAmount || prizeWei === 0n || isSyncing}
                 className="shrink-0"
               >
-                {createRound.isPending || createRound.isConfirming ? (
+                {isSyncing ? (
                   <><Loader2 className="size-4 animate-spin" /> Creating...</>
                 ) : (
                   "Create Round"
@@ -347,14 +359,9 @@ export default function AdminPage() {
             )}
           </div>
 
-          {(createRound.error || approveError) && (
+          {(syncError || approveError) && (
             <p className="text-sm text-destructive mt-3">
-              {(createRound.error || approveError)?.message?.slice(0, 120)}
-            </p>
-          )}
-          {createRound.isSuccess && (
-            <p className="text-sm text-green-400 mt-3">
-              Round created successfully!
+              {syncError || approveError?.message?.slice(0, 120)}
             </p>
           )}
         </div>
@@ -405,9 +412,9 @@ export default function AdminPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleAdvance(round)}
-                        disabled={advanceRound.isPending || advanceRound.isConfirming}
+                        disabled={isSyncing}
                       >
-                        {advanceRound.isPending || advanceRound.isConfirming ? (
+                        {isSyncing ? (
                           <Loader2 className="size-4 animate-spin" />
                         ) : (
                           <>
@@ -418,18 +425,18 @@ export default function AdminPage() {
                       </Button>
                     )}
 
-                    {round.status === "completed" && !round.winnerId && (
+                    {round.status === "judging" && !round.winnerId && (
                       <Button
                         size="sm"
                         onClick={() => openWinnerSelector(round)}
-                        disabled={selectWinner.isPending || selectWinner.isConfirming}
+                        disabled={isSyncing}
                       >
                         <Trophy className="size-4" />
                         Select Winner
                       </Button>
                     )}
 
-                    {round.status === "completed" && round.winnerId && (
+                    {round.winnerId && (
                       <span className="text-xs text-green-400 font-mono">
                         Winner selected
                       </span>
@@ -440,9 +447,9 @@ export default function AdminPage() {
             </div>
           )}
 
-          {(advanceRound.error || selectWinner.error) && (
+          {syncError && (
             <p className="text-sm text-destructive mt-3">
-              {(advanceRound.error || selectWinner.error)?.message?.slice(0, 120)}
+              {syncError}
             </p>
           )}
         </div>
@@ -506,9 +513,9 @@ export default function AdminPage() {
                   <Button
                     size="sm"
                     onClick={() => handleSelectWinner(entry)}
-                    disabled={selectWinner.isPending || selectWinner.isConfirming || !entry.user}
+                    disabled={isSyncing || !entry.user}
                   >
-                    {selectWinner.isPending || selectWinner.isConfirming ? (
+                    {isSyncing ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
                       <>
