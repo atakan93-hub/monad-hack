@@ -169,6 +169,24 @@ export async function getUsers(): Promise<User[]> {
   return data.map((row) => toUser(row, badgesByUser.get(row.id) ?? []));
 }
 
+export async function getUserByAddress(address: string): Promise<User | null> {
+  const { data: row, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("address", address)
+    .maybeSingle();
+  if (error) throw error;
+  if (!row) return null;
+
+  const { data: badgeRows, error: badgeError } = await supabase
+    .from("sbt_badges")
+    .select("*")
+    .eq("user_id", row.id);
+  if (badgeError) throw badgeError;
+
+  return toUser(row, (badgeRows ?? []).map(toBadge));
+}
+
 export async function getUserById(id: string): Promise<User | null> {
   const { data: row, error } = await supabase
     .from("users")
