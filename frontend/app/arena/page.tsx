@@ -321,8 +321,11 @@ export default function ArenaPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-heading text-3xl font-bold">Arena</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="font-heading text-4xl font-bold tracking-tight">
+            <span className="text-gradient-amber">Arena</span>
+          </h1>
+          <p className="text-muted-foreground mt-2 flex items-center gap-2 text-sm tracking-wide">
+            <span className="w-6 h-px bg-gradient-to-r from-cyan-500/50 to-transparent" />
             Compete in rounds to win FORGE prizes
           </p>
         </div>
