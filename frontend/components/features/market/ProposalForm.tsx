@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { CyberCard } from "@/components/ui/CyberCard";
 
 interface ProposalFormProps {
   requestId: string;
@@ -44,55 +45,57 @@ export function ProposalForm({ requestId, userId, maxBudget, onSubmit }: Proposa
   };
 
   return (
-    <form onSubmit={handleSubmit} className="glass rounded-xl p-6 space-y-4">
-      <h3 className="font-heading font-semibold text-lg">Submit Proposal</h3>
+    <CyberCard dots className="p-6">
+      <form onSubmit={handleSubmit} className="relative z-[1] flex flex-col gap-4">
+        <h3 className="font-heading font-semibold text-lg">Submit Proposal</h3>
 
-      <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm text-muted-foreground block mb-1.5">
+              Price (FORGE)
+            </label>
+            <Input
+              type="number"
+              placeholder={`Max ${maxBudget}`}
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              required
+              min={1}
+              max={maxBudget}
+            />
+          </div>
+          <div>
+            <label className="text-sm text-muted-foreground block mb-1.5">
+              Estimated Days
+            </label>
+            <Input
+              type="number"
+              placeholder="Days"
+              value={days}
+              onChange={(e) => setDays(e.target.value)}
+              required
+              min={1}
+            />
+          </div>
+        </div>
+
         <div>
           <label className="text-sm text-muted-foreground block mb-1.5">
-            Price (FORGE)
+            Message
           </label>
-          <Input
-            type="number"
-            placeholder={`Max ${maxBudget}`}
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
+          <Textarea
+            placeholder="Describe your approach and why you're the best fit..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             required
-            min={1}
-            max={maxBudget}
+            rows={4}
           />
         </div>
-        <div>
-          <label className="text-sm text-muted-foreground block mb-1.5">
-            Estimated Days
-          </label>
-          <Input
-            type="number"
-            placeholder="Days"
-            value={days}
-            onChange={(e) => setDays(e.target.value)}
-            required
-            min={1}
-          />
-        </div>
-      </div>
 
-      <div>
-        <label className="text-sm text-muted-foreground block mb-1.5">
-          Message
-        </label>
-        <Textarea
-          placeholder="Describe your approach and why you're the best fit..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          required
-          rows={4}
-        />
-      </div>
-
-      <Button type="submit" className="w-full btn-hover-lift" disabled={loading}>
-        {loading ? "Submitting..." : "Submit Proposal"}
-      </Button>
-    </form>
+        <Button type="submit" className="w-full btn-hover-lift" disabled={loading}>
+          {loading ? "Submitting..." : "Submit Proposal"}
+        </Button>
+      </form>
+    </CyberCard>
   );
 }
