@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { CyberCard } from "@/components/ui/CyberCard";
 import { RoundCard } from "@/components/features/arena/RoundCard";
 import { TopicCard } from "@/components/features/arena/TopicCard";
 import { TopicVoteButton } from "@/components/features/arena/TopicVoteButton";
@@ -98,7 +99,6 @@ export default function ArenaPage() {
     );
     setRounds(data);
 
-    // Load topic & entry counts for each round
     const tCounts: Record<string, number> = {};
     const eCounts: Record<string, number> = {};
     for (const r of data) {
@@ -129,7 +129,6 @@ export default function ArenaPage() {
     setTopics(t);
     setEntries(e);
 
-    // Load user names for entries
     const names: Record<string, string> = {};
     for (const entry of e) {
       if (!names[entry.userId]) {
@@ -215,7 +214,6 @@ export default function ArenaPage() {
     const data = pendingProposeData.current;
     pendingProposeData.current = null;
 
-    // Decode TopicProposed event to extract onChainTopicId
     let onChainTopicId: string | undefined;
     for (const log of proposeHook.receipt.logs) {
       try {
@@ -392,7 +390,7 @@ export default function ArenaPage() {
 
               {/* Proposing: topic list + proposal form */}
               {selectedRound.status === "proposing" && (
-                <div className="space-y-4 mt-4">
+                <div className="flex flex-col gap-4 mt-4">
                   <h4 className="font-semibold text-sm">
                     Proposed Topics ({topics.length})
                   </h4>
@@ -400,7 +398,7 @@ export default function ArenaPage() {
                     <TopicCard key={topic.id} topic={topic} showVotes={false} />
                   ))}
 
-                  <div className="border-t border-border pt-4 space-y-3">
+                  <div className="border-t border-cyan-500/10 pt-4 flex flex-col gap-3">
                     <h4 className="font-semibold text-sm">Propose a Topic</h4>
                     <Input
                       placeholder="Topic title"
@@ -425,25 +423,27 @@ export default function ArenaPage() {
 
               {/* Voting: topics + vote buttons */}
               {selectedRound.status === "voting" && (
-                <div className="space-y-4 mt-4">
+                <div className="flex flex-col gap-4 mt-4">
                   {/* Voting power info */}
                   {isConnected && (
-                    <div className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-4 py-2.5 text-sm">
-                      <span className="text-muted-foreground">Your voting power</span>
-                      <span className="font-semibold text-primary">
-                        {votingPower.toLocaleString()} FORGE
-                      </span>
-                      {alreadyVoted && (
-                        <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30 ml-auto">
-                          Voted
-                        </Badge>
-                      )}
-                      {!alreadyVoted && votingPower === 0 && (
-                        <span className="text-destructive ml-auto text-xs">
-                          Need FORGE tokens to vote
+                    <CyberCard dots={false} className="p-3">
+                      <div className="relative z-[1] flex items-center gap-3 text-sm">
+                        <span className="text-muted-foreground">Your voting power</span>
+                        <span className="font-semibold text-primary">
+                          {votingPower.toLocaleString()} FORGE
                         </span>
-                      )}
-                    </div>
+                        {alreadyVoted && (
+                          <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30 ml-auto">
+                            Voted
+                          </Badge>
+                        )}
+                        {!alreadyVoted && votingPower === 0 && (
+                          <span className="text-destructive ml-auto text-xs">
+                            Need FORGE tokens to vote
+                          </span>
+                        )}
+                      </div>
+                    </CyberCard>
                   )}
 
                   <h4 className="font-semibold text-sm">
@@ -468,19 +468,21 @@ export default function ArenaPage() {
 
               {/* Active: selected topic + entries */}
               {selectedRound.status === "active" && (
-                <div className="space-y-4 mt-4">
+                <div className="flex flex-col gap-4 mt-4">
                   {selectedTopic && (
-                    <div className="border border-primary/20 rounded-lg p-4 bg-primary/5">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Selected Topic
-                      </p>
-                      <h4 className="font-heading font-semibold">
-                        {selectedTopic.title}
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {selectedTopic.description}
-                      </p>
-                    </div>
+                    <CyberCard dots={false} className="p-4 !border-primary/20">
+                      <div className="relative z-[1]">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Selected Topic
+                        </p>
+                        <h4 className="font-heading font-semibold">
+                          {selectedTopic.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {selectedTopic.description}
+                        </p>
+                      </div>
+                    </CyberCard>
                   )}
 
                   <h4 className="font-semibold text-sm">
@@ -502,7 +504,7 @@ export default function ArenaPage() {
 
                   {/* Entry submission form */}
                   {isConnected && (
-                    <div className="border-t border-border pt-4 space-y-3">
+                    <div className="border-t border-cyan-500/10 pt-4 flex flex-col gap-3">
                       <h4 className="font-semibold text-sm">Submit Entry</h4>
                       <Input
                         placeholder="Repository URL"
@@ -528,16 +530,18 @@ export default function ArenaPage() {
 
               {/* Completed: winner + results */}
               {selectedRound.status === "completed" && (
-                <div className="space-y-4 mt-4">
+                <div className="flex flex-col gap-4 mt-4">
                   {selectedTopic && (
-                    <div className="border border-border rounded-lg p-4">
-                      <p className="text-xs text-muted-foreground mb-1">
-                        Topic
-                      </p>
-                      <h4 className="font-heading font-semibold">
-                        {selectedTopic.title}
-                      </h4>
-                    </div>
+                    <CyberCard dots={false} className="p-4">
+                      <div className="relative z-[1]">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Topic
+                        </p>
+                        <h4 className="font-heading font-semibold">
+                          {selectedTopic.title}
+                        </h4>
+                      </div>
+                    </CyberCard>
                   )}
 
                   <h4 className="font-semibold text-sm">

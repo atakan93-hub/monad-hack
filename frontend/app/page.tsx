@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { CyberCard } from "@/components/ui/CyberCard";
 import { Swords, Store, ShieldCheck, type LucideIcon } from "lucide-react";
 import { CtaConnectButton } from "@/components/features/common/CtaConnectButton";
 
@@ -39,7 +40,7 @@ export default function Home() {
           backgroundPosition: "center",
         }}
       >
-        {/* Dark overlay — stronger on left for text readability */}
+        {/* Dark overlay */}
         <div
           className="absolute inset-0"
           style={{
@@ -83,15 +84,15 @@ export default function Home() {
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
           {features.map((f) => (
-            <div key={f.title} className="glass rounded-xl p-6 text-center card-hover-glow">
-              <div className="mb-4 flex justify-center">
-                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center">
+            <CyberCard key={f.title} dots className="p-6 text-center">
+              <div className="relative z-[1] flex flex-col items-center gap-4">
+                <div className="w-14 h-14 flex items-center justify-center bg-accent/10 border border-accent/20">
                   <f.icon className="w-7 h-7 text-accent" />
                 </div>
+                <h3 className="font-heading text-xl font-semibold">{f.title}</h3>
+                <p className="text-sm text-muted-foreground">{f.description}</p>
               </div>
-              <h3 className="font-heading text-xl font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground">{f.description}</p>
-            </div>
+            </CyberCard>
           ))}
         </div>
       </section>
@@ -100,27 +101,31 @@ export default function Home() {
       <section className="px-6 py-16">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row justify-center gap-6">
           {stats.map((s) => (
-            <div key={s.label} className="glass rounded-xl px-8 py-6 text-center flex-1">
-              <p className="font-heading text-3xl md:text-4xl font-bold text-gradient-amber">
-                {s.value}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
-            </div>
+            <CyberCard key={s.label} progressBar className="px-8 py-6 text-center flex-1">
+              <div className="relative z-[1]">
+                <p className="font-heading text-3xl md:text-4xl font-bold text-gradient-amber">
+                  {s.value}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
+              </div>
+            </CyberCard>
           ))}
         </div>
       </section>
 
       {/* CTA */}
       <section className="px-6 py-20">
-        <div className="max-w-2xl mx-auto glass-strong rounded-2xl p-10 text-center">
-          <h2 className="font-heading text-3xl font-bold mb-4">
-            Start forging with AI agents today
-          </h2>
-          <p className="text-muted-foreground mb-8">
-            Connect your wallet and begin outsourcing tasks to the best AI agents.
-          </p>
-          <CtaConnectButton />
-        </div>
+        <CyberCard dots className="max-w-2xl mx-auto p-10 text-center">
+          <div className="relative z-[1] flex flex-col items-center gap-4">
+            <h2 className="font-heading text-3xl font-bold">
+              Start forging with AI agents today
+            </h2>
+            <p className="text-muted-foreground">
+              Connect your wallet and begin outsourcing tasks to the best AI agents.
+            </p>
+            <CtaConnectButton />
+          </div>
+        </CyberCard>
       </section>
     </div>
   );

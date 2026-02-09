@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { CyberCard } from "@/components/ui/CyberCard";
 import { Trophy, Medal, Award } from "lucide-react";
 import { AgentProfile } from "@/components/features/agent/AgentProfile";
 import { AgentStats } from "@/components/features/agent/AgentStats";
@@ -45,7 +46,7 @@ export default function AgentDetailPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
+    <div className="max-w-4xl mx-auto px-6 py-10 flex flex-col gap-10">
       {/* Profile */}
       <AgentProfile user={profile} />
 
@@ -59,52 +60,56 @@ export default function AgentDetailPage() {
 
       {/* SBT Badges */}
       {profile.sbtBadges.length > 0 && (
-        <div>
-          <h2 className="font-heading text-xl font-semibold mb-4">SBT Badges</h2>
-          <div className="flex flex-wrap gap-3">
-            {profile.sbtBadges.map((badge) => (
-              <Badge
-                key={badge.id}
-                variant="outline"
-                className={`text-sm px-3 py-1.5 ${tierGlows[badge.tier]}`}
-              >
-                {badge.tier === "gold" && <Trophy className="w-4 h-4 inline text-yellow-400 mr-1" />}
-                {badge.tier === "silver" && <Medal className="w-4 h-4 inline text-gray-300 mr-1" />}
-                {badge.tier === "bronze" && <Award className="w-4 h-4 inline text-orange-400 mr-1" />}
-                {badge.name}
-              </Badge>
-            ))}
+        <CyberCard dots={false} className="p-6">
+          <div className="relative z-[1]">
+            <h2 className="font-heading text-xl font-semibold mb-4">SBT Badges</h2>
+            <div className="flex flex-wrap gap-3">
+              {profile.sbtBadges.map((badge) => (
+                <Badge
+                  key={badge.id}
+                  variant="outline"
+                  className={`text-sm px-3 py-1.5 ${tierGlows[badge.tier]}`}
+                >
+                  {badge.tier === "gold" && <Trophy className="w-4 h-4 inline text-yellow-400 mr-1" />}
+                  {badge.tier === "silver" && <Medal className="w-4 h-4 inline text-gray-300 mr-1" />}
+                  {badge.tier === "bronze" && <Award className="w-4 h-4 inline text-orange-400 mr-1" />}
+                  {badge.name}
+                </Badge>
+              ))}
+            </div>
           </div>
-        </div>
+        </CyberCard>
       )}
 
       {/* Completed Tasks */}
-      <div>
-        <h2 className="font-heading text-xl font-semibold mb-4">
-          Completed Tasks
-        </h2>
-        {completedTasks.length > 0 ? (
-          <div className="space-y-3">
-            {completedTasks.map((task) => (
-              <div key={task.id} className="glass rounded-xl p-4 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">{task.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {task.category} • {task.budget.toLocaleString()} FORGE
-                  </p>
+      <CyberCard dots className="p-6">
+        <div className="relative z-[1]">
+          <h2 className="font-heading text-xl font-semibold mb-4">
+            Completed Tasks
+          </h2>
+          {completedTasks.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {completedTasks.map((task) => (
+                <div key={task.id} className="p-4 border border-cyan-500/10 bg-white/[0.02] flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-sm">{task.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {task.category} &middot; {task.budget.toLocaleString()} FORGE
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
+                    Completed
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
-                  Completed
-                </Badge>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No completed tasks yet.
-          </p>
-        )}
-      </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No completed tasks yet.
+            </p>
+          )}
+        </div>
+      </CyberCard>
     </div>
   );
 }

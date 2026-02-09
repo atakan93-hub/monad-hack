@@ -10,10 +10,10 @@ import {
   getEntriesByRound,
   getUserById,
 } from "@/lib/supabase-api";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { CyberCard } from "@/components/ui/CyberCard";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import type { Round, ArenaEntry, User } from "@/lib/types";
 
-// ─── Constants ────────────────────────────────────────
+// Constants
 const STATUS_LABELS: Record<string, string> = {
   proposing: "Proposing",
   voting: "Voting",
@@ -53,7 +53,6 @@ const statusColors: Record<string, string> = {
   completed: "bg-green-500/20 text-green-400 border-green-500/30",
 };
 
-// ─── Main ─────────────────────────────────────────────
 export default function AdminPage() {
   const { isAdmin, isLoading: adminLoading } = useAdminCheck();
   const { address } = useAccount();
@@ -67,7 +66,7 @@ export default function AdminPage() {
   const [entries, setEntries] = useState<(ArenaEntry & { user?: User })[]>([]);
   const [isLoadingEntries, setIsLoadingEntries] = useState(false);
 
-  // ─── Contract hooks ─────────────────────────────────
+  // Contract hooks
   const createRound = useCreateRound();
   const advanceRound = useAdvanceRound();
   const selectWinner = useSelectWinner();
@@ -97,7 +96,7 @@ export default function AdminPage() {
     functionName: "roundCount",
   });
 
-  // ─── Load rounds ───────────────────────────────────
+  // Load rounds
   const loadRounds = useCallback(async () => {
     setIsLoadingRounds(true);
     const data = await getRounds();
@@ -109,7 +108,7 @@ export default function AdminPage() {
     loadRounds();
   }, [loadRounds]);
 
-  // ─── Create round ──────────────────────────────────
+  // Create round
   const prizeWei = prizeAmount ? parseUnits(prizeAmount, 18) : 0n;
   const needsApproval = allowance !== undefined && prizeWei > 0n && (allowance as bigint) < prizeWei;
 
@@ -122,7 +121,6 @@ export default function AdminPage() {
     });
   }
 
-  // After approve success, refetch allowance
   useEffect(() => {
     if (approveSuccess) refetchAllowance();
   }, [approveSuccess, refetchAllowance]);
@@ -132,11 +130,9 @@ export default function AdminPage() {
     createRound.write(prizeWei);
   }
 
-  // After createRound success → sync DB via API
   useEffect(() => {
     if (!createRound.isSuccess || !createRound.receipt) return;
 
-    // Decode RoundCreated event to get on-chain roundId
     let onChainRoundId: number | undefined;
     for (const log of createRound.receipt.logs) {
       try {
@@ -167,7 +163,7 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [createRound.isSuccess]);
 
-  // ─── Advance round ─────────────────────────────────
+  // Advance round
   const [advancingRoundId, setAdvancingRoundId] = useState<string | null>(null);
   const [advancingNewStatus, setAdvancingNewStatus] = useState<string | null>(null);
 
@@ -199,7 +195,7 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [advanceRound.isSuccess]);
 
-  // ─── Select winner ─────────────────────────────────
+  // Select winner
   async function openWinnerSelector(round: Round) {
     setWinnerRound(round);
     setIsLoadingEntries(true);
@@ -250,7 +246,7 @@ export default function AdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectWinner.isSuccess]);
 
-  // ─── Access control ────────────────────────────────
+  // Access control
   if (adminLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-16">
@@ -262,21 +258,22 @@ export default function AdminPage() {
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-16">
-        <Card className="p-8 max-w-md text-center glass-strong">
-          <AlertTriangle className="size-12 text-destructive mx-auto mb-4" />
-          <h1 className="text-2xl font-heading font-bold mb-2">Access Denied</h1>
-          <p className="text-muted-foreground">
-            Only the Arena admin can access this page.
-          </p>
-          <p className="text-xs text-muted-foreground mt-4 font-mono">
-            Connected: {address?.slice(0, 6)}...{address?.slice(-4) ?? "N/A"}
-          </p>
-        </Card>
+        <CyberCard dots className="p-8 max-w-md text-center">
+          <div className="relative z-[1] flex flex-col items-center gap-4">
+            <AlertTriangle className="size-12 text-destructive" />
+            <h1 className="text-2xl font-heading font-bold">Access Denied</h1>
+            <p className="text-muted-foreground">
+              Only the Arena admin can access this page.
+            </p>
+            <p className="text-xs text-muted-foreground font-mono">
+              Connected: {address?.slice(0, 6)}...{address?.slice(-4) ?? "N/A"}
+            </p>
+          </div>
+        </CyberCard>
       </div>
     );
   }
 
-  // ─── Render ────────────────────────────────────────
   return (
     <div className="max-w-4xl mx-auto px-6 py-10 pt-24">
       {/* Header */}
@@ -295,151 +292,155 @@ export default function AdminPage() {
         </Badge>
       </div>
 
-      {/* ── Create Round ──────────────────────────────── */}
-      <Card className="p-6 mb-8 glass-strong border-white/[0.06]">
-        <h2 className="font-heading text-xl font-semibold mb-4 flex items-center gap-2">
-          <Plus className="size-5 text-primary" />
-          Create Round
-        </h2>
-        <div className="flex gap-3 items-end">
-          <div className="flex-1">
-            <label className="block text-sm text-muted-foreground mb-1.5">
-              Prize Amount (FORGE)
-            </label>
-            <Input
-              type="number"
-              placeholder="10000"
-              value={prizeAmount}
-              onChange={(e) => setPrizeAmount(e.target.value)}
-            />
+      {/* Create Round */}
+      <CyberCard dots className="p-6 mb-8">
+        <div className="relative z-[1]">
+          <h2 className="font-heading text-xl font-semibold mb-4 flex items-center gap-2">
+            <Plus className="size-5 text-primary" />
+            Create Round
+          </h2>
+          <div className="flex gap-3 items-end">
+            <div className="flex-1">
+              <label className="block text-sm text-muted-foreground mb-1.5">
+                Prize Amount (FORGE)
+              </label>
+              <Input
+                type="number"
+                placeholder="10000"
+                value={prizeAmount}
+                onChange={(e) => setPrizeAmount(e.target.value)}
+              />
+            </div>
+
+            {needsApproval ? (
+              <Button
+                onClick={handleApprove}
+                disabled={isApproving || isApproveConfirming || !prizeAmount}
+                className="shrink-0"
+              >
+                {isApproving || isApproveConfirming ? (
+                  <><Loader2 className="size-4 animate-spin" /> Approving...</>
+                ) : (
+                  "Approve FORGE"
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleCreateRound}
+                disabled={!prizeAmount || prizeWei === 0n || createRound.isPending || createRound.isConfirming}
+                className="shrink-0"
+              >
+                {createRound.isPending || createRound.isConfirming ? (
+                  <><Loader2 className="size-4 animate-spin" /> Creating...</>
+                ) : (
+                  "Create Round"
+                )}
+              </Button>
+            )}
           </div>
 
-          {needsApproval ? (
-            <Button
-              onClick={handleApprove}
-              disabled={isApproving || isApproveConfirming || !prizeAmount}
-              className="shrink-0"
-            >
-              {isApproving || isApproveConfirming ? (
-                <><Loader2 className="size-4 animate-spin" /> Approving...</>
-              ) : (
-                "Approve FORGE"
-              )}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleCreateRound}
-              disabled={!prizeAmount || prizeWei === 0n || createRound.isPending || createRound.isConfirming}
-              className="shrink-0"
-            >
-              {createRound.isPending || createRound.isConfirming ? (
-                <><Loader2 className="size-4 animate-spin" /> Creating...</>
-              ) : (
-                "Create Round"
-              )}
-            </Button>
+          {(createRound.error || approveError) && (
+            <p className="text-sm text-destructive mt-3">
+              {(createRound.error || approveError)?.message?.slice(0, 120)}
+            </p>
+          )}
+          {createRound.isSuccess && (
+            <p className="text-sm text-green-400 mt-3">
+              Round created successfully!
+            </p>
           )}
         </div>
+      </CyberCard>
 
-        {(createRound.error || approveError) && (
-          <p className="text-sm text-destructive mt-3">
-            {(createRound.error || approveError)?.message?.slice(0, 120)}
-          </p>
-        )}
-        {createRound.isSuccess && (
-          <p className="text-sm text-green-400 mt-3">
-            Round created successfully!
-          </p>
-        )}
-      </Card>
+      {/* Manage Rounds */}
+      <CyberCard dots className="p-6">
+        <div className="relative z-[1]">
+          <h2 className="font-heading text-xl font-semibold mb-4">
+            Manage Rounds
+          </h2>
 
-      {/* ── Manage Rounds ─────────────────────────────── */}
-      <Card className="p-6 glass-strong border-white/[0.06]">
-        <h2 className="font-heading text-xl font-semibold mb-4">
-          Manage Rounds
-        </h2>
-
-        {isLoadingRounds ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="size-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : rounds.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">
-            No rounds yet. Create the first one above.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {rounds.map((round) => (
-              <div
-                key={round.id}
-                className="border border-white/[0.06] rounded-lg p-4 flex items-center justify-between gap-4"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-heading font-semibold">
-                      Round #{round.roundNumber}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className={statusColors[round.status] ?? ""}
-                    >
-                      {STATUS_LABELS[round.status] ?? round.status}
-                    </Badge>
+          {isLoadingRounds ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : rounds.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              No rounds yet. Create the first one above.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {rounds.map((round) => (
+                <div
+                  key={round.id}
+                  className="border border-cyan-500/10 bg-white/[0.02] p-4 flex items-center justify-between gap-4"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-heading font-semibold">
+                        Round #{round.roundNumber}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={statusColors[round.status] ?? ""}
+                      >
+                        {STATUS_LABELS[round.status] ?? round.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Prize: {round.prize.toLocaleString()} FORGE
+                    </p>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Prize: {round.prize.toLocaleString()} FORGE
-                  </p>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {(round.status === "proposing" || round.status === "voting") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAdvance(round)}
+                        disabled={advanceRound.isPending || advanceRound.isConfirming}
+                      >
+                        {advanceRound.isPending || advanceRound.isConfirming ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          <>
+                            <ChevronRight className="size-4" />
+                            {STATUS_NEXT[round.status]}
+                          </>
+                        )}
+                      </Button>
+                    )}
+
+                    {round.status === "active" && (
+                      <Button
+                        size="sm"
+                        onClick={() => openWinnerSelector(round)}
+                        disabled={selectWinner.isPending || selectWinner.isConfirming}
+                      >
+                        <Trophy className="size-4" />
+                        Select Winner
+                      </Button>
+                    )}
+
+                    {round.status === "completed" && round.winnerId && (
+                      <span className="text-xs text-green-400 font-mono">
+                        Winner selected
+                      </span>
+                    )}
+                  </div>
                 </div>
+              ))}
+            </div>
+          )}
 
-                <div className="flex items-center gap-2 shrink-0">
-                  {(round.status === "proposing" || round.status === "voting") && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleAdvance(round)}
-                      disabled={advanceRound.isPending || advanceRound.isConfirming}
-                    >
-                      {advanceRound.isPending || advanceRound.isConfirming ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <>
-                          <ChevronRight className="size-4" />
-                          {STATUS_NEXT[round.status]}
-                        </>
-                      )}
-                    </Button>
-                  )}
+          {(advanceRound.error || selectWinner.error) && (
+            <p className="text-sm text-destructive mt-3">
+              {(advanceRound.error || selectWinner.error)?.message?.slice(0, 120)}
+            </p>
+          )}
+        </div>
+      </CyberCard>
 
-                  {round.status === "active" && (
-                    <Button
-                      size="sm"
-                      onClick={() => openWinnerSelector(round)}
-                      disabled={selectWinner.isPending || selectWinner.isConfirming}
-                    >
-                      <Trophy className="size-4" />
-                      Select Winner
-                    </Button>
-                  )}
-
-                  {round.status === "completed" && round.winnerId && (
-                    <span className="text-xs text-green-400 font-mono">
-                      Winner selected
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {(advanceRound.error || selectWinner.error) && (
-          <p className="text-sm text-destructive mt-3">
-            {(advanceRound.error || selectWinner.error)?.message?.slice(0, 120)}
-          </p>
-        )}
-      </Card>
-
-      {/* ── Winner Selector Dialog ────────────────────── */}
+      {/* Winner Selector Dialog */}
       <Dialog
         open={!!winnerRound}
         onOpenChange={(open) => {
@@ -449,7 +450,7 @@ export default function AdminPage() {
           }
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto glass-strong">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-heading">
               Select Winner — Round #{winnerRound?.roundNumber}
@@ -465,11 +466,11 @@ export default function AdminPage() {
               No entries submitted for this round.
             </p>
           ) : (
-            <div className="space-y-3 mt-2">
+            <div className="flex flex-col gap-3 mt-2">
               {entries.map((entry) => (
                 <div
                   key={entry.id}
-                  className="border border-white/[0.06] rounded-lg p-4 flex items-start justify-between gap-4"
+                  className="border border-cyan-500/10 bg-white/[0.02] p-4 flex items-start justify-between gap-4"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm">

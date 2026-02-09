@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CyberCard } from "@/components/ui/CyberCard";
 import { ProposalForm } from "@/components/features/market/ProposalForm";
 import {
   getRequestById,
@@ -105,7 +106,6 @@ export default function RequestDetailPage() {
       const deadline = BigInt(Math.floor(Date.now() / 1000) + prop.estimatedDays * 86400);
       createDeal.write(agentAddr, amount, deadline);
     } else {
-      // Off-chain only: update proposal + create escrow directly
       await fetch("/api/market/proposals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -132,7 +132,6 @@ export default function RequestDetailPage() {
     const { requestId, userId, amount } = pendingAccept.current;
     pendingAccept.current = null;
 
-    // Decode DealCreated event to extract on-chain dealId
     let onChainDealId: string | undefined;
     for (const log of createDeal.receipt.logs) {
       try {
@@ -145,7 +144,6 @@ export default function RequestDetailPage() {
     }
 
     (async () => {
-      // Update proposal status
       const prop = proposals.find((p) => p.userId === userId);
       if (prop) {
         await fetch("/api/market/proposals", {
@@ -154,7 +152,6 @@ export default function RequestDetailPage() {
           body: JSON.stringify({ action: "updateStatus", proposalId: prop.id, status: "accepted" }),
         });
       }
-      // Create escrow record with on-chain ID
       await fetch("/api/escrow/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -191,46 +188,46 @@ export default function RequestDetailPage() {
         href="/market"
         className="text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        ← Back to Market
+        &larr; Back to Market
       </Link>
 
       {/* Header */}
-      <div className="mt-6 space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="secondary">
-            {categoryLabels[request.category]}
-          </Badge>
-          <Badge variant="outline" className={statusColors[request.status]}>
-            {request.status.replace("_", " ")}
-          </Badge>
-        </div>
-        <h1 className="font-heading text-3xl font-bold">{request.title}</h1>
-        <div className="flex gap-6 text-sm text-muted-foreground">
-          <span>
-            Budget:{" "}
-            <span className="text-primary font-semibold">
-              {request.budget.toLocaleString()} FORGE
+      <CyberCard dots={false} className="mt-6 p-6">
+        <div className="relative z-[1] flex flex-col gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="secondary">
+              {categoryLabels[request.category]}
+            </Badge>
+            <Badge variant="outline" className={statusColors[request.status]}>
+              {request.status.replace("_", " ")}
+            </Badge>
+          </div>
+          <h1 className="font-heading text-3xl font-bold">{request.title}</h1>
+          <div className="flex gap-6 text-sm text-muted-foreground">
+            <span>
+              Budget:{" "}
+              <span className="text-primary font-semibold">
+                {request.budget.toLocaleString()} FORGE
+              </span>
             </span>
-          </span>
-          <span>Deadline: {daysLeft > 0 ? `${daysLeft} days left` : "Ended"}</span>
+            <span>Deadline: {daysLeft > 0 ? `${daysLeft} days left` : "Ended"}</span>
+          </div>
+          <div className="pt-4 border-t border-cyan-500/10">
+            <p className="text-muted-foreground leading-relaxed">
+              {request.description}
+            </p>
+          </div>
         </div>
-      </div>
-
-      {/* Description */}
-      <div className="mt-8 border-t border-border pt-6">
-        <p className="text-muted-foreground leading-relaxed">
-          {request.description}
-        </p>
-      </div>
+      </CyberCard>
 
       {/* Proposals */}
-      <div className="mt-10 border-t border-border pt-6">
+      <div className="mt-10">
         <h2 className="font-heading text-xl font-semibold mb-4">
           Proposals ({proposals.length})
         </h2>
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           {proposals.map((prop) => (
-            <div key={prop.id} className="glass rounded-xl p-4">
+            <div key={prop.id} className="p-4 border border-cyan-500/10 bg-white/[0.02]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Link href={`/agent/${prop.userId}`}>
@@ -249,7 +246,7 @@ export default function RequestDetailPage() {
                         {prop.proposer?.name ?? prop.userId}
                       </Link>
                       <p className="text-xs text-muted-foreground">
-                        {prop.estimatedDays} days •{" "}
+                        {prop.estimatedDays} days &middot;{" "}
                         <span className="text-primary font-medium">
                           {prop.price.toLocaleString()} FORGE
                         </span>
@@ -288,7 +285,7 @@ export default function RequestDetailPage() {
 
       {/* Submit Proposal Form */}
       {request.status === "open" && user && (
-        <div className="mt-10 border-t border-border pt-6">
+        <div className="mt-10">
           <ProposalForm
             requestId={request.id}
             userId={user.id}
