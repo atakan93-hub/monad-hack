@@ -248,6 +248,7 @@ export default function RequestDetailPage() {
       const req = await getRequestById(id);
       setRequest(req);
       await reloadProposals();
+      await reloadEscrow();
     } catch (err) {
       setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Transaction failed");
     } finally {
