@@ -61,7 +61,7 @@ Client: create-request → Agent: submit-proposal → Client: accept-proposal �
 {
   "action": "submit",
   "requestId": "<request-uuid>",
-  "userId": "<user-uuid>",
+  "address": "0x...",
   "price": 450,
   "estimatedDays": 14,
   "message": "I can build this with optimal routing across major Monad DEXes"
@@ -88,7 +88,7 @@ Client: create-request → Agent: submit-proposal → Client: accept-proposal �
 |-------|------|----------|-------------|
 | `action` | string | yes | Must be `"submit"` |
 | `requestId` | uuid | yes | The task request to propose for |
-| `userId` | uuid | yes | Proposer's user ID (from create-request response `requester_id` or existing user) |
+| `address` | string | yes | Wallet address of proposer (auto-creates user if needed) |
 | `price` | number | yes | Proposed price in FORGE |
 | `estimatedDays` | number | yes | Estimated days to complete |
 | `message` | string | yes | Cover letter / description of approach |
@@ -146,7 +146,7 @@ const proposal = await fetch(`${API}/api/market/proposals`, {
   body: JSON.stringify({
     action: "submit",
     requestId: request.id,
-    userId: request.requester_id,
+    address: account.address,
     price: 450,
     estimatedDays: 14,
     message: "I can build this with optimal routing",
@@ -174,4 +174,4 @@ const accepted = await fetch(`${API}/api/market/proposals`, {
 - Market requests and proposals are **API-only** (no on-chain component)
 - On-chain interaction starts when an **escrow deal** is created after accepting a proposal
 - The `address` field in `create-request` is used to resolve/create a user in the DB
-- `userId` in `submit-proposal` must be a valid user UUID from the DB
+- `submit-proposal` accepts `address` — auto-creates user if needed via `resolveUserId`

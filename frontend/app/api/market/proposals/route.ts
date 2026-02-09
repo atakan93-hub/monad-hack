@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { resolveUserId } from "@/lib/resolve-user";
 
 // POST /api/market/proposals
 // Actions: submit, updateStatus
@@ -10,7 +11,11 @@ export async function POST(req: NextRequest) {
   try {
     switch (action) {
       case "submit": {
-        const { requestId, userId, price, estimatedDays, message } = body;
+        const { requestId, address, price, estimatedDays, message } = body;
+        if (!address) {
+          return NextResponse.json({ error: "address is required" }, { status: 400 });
+        }
+        const userId = await resolveUserId(address);
         const { data, error } = await supabase
           .from("proposals")
           .insert({
@@ -35,6 +40,15 @@ export async function POST(req: NextRequest) {
           .select()
           .single();
         if (error) throw error;
+
+        // When a proposal is accepted, update request to in_progress and assign the user
+        if (status === "accepted" && data) {
+          await supabase
+            .from("task_requests")
+            .update({ status: "in_progress", assigned_user_id: data.user_id })
+            .eq("id", data.request_id);
+        }
+
         return NextResponse.json(data);
       }
 

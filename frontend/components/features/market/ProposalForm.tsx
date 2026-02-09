@@ -8,18 +8,18 @@ import { CyberCard } from "@/components/ui/CyberCard";
 
 interface ProposalFormProps {
   requestId: string;
-  userId: string;
+  address: string;
   maxBudget: number;
   onSubmit: (data: {
     requestId: string;
-    userId: string;
+    address: string;
     price: number;
     estimatedDays: number;
     message: string;
   }) => void;
 }
 
-export function ProposalForm({ requestId, userId, maxBudget, onSubmit }: ProposalFormProps) {
+export function ProposalForm({ requestId, address, maxBudget, onSubmit }: ProposalFormProps) {
   const [price, setPrice] = useState("");
   const [days, setDays] = useState("");
   const [message, setMessage] = useState("");
@@ -31,7 +31,7 @@ export function ProposalForm({ requestId, userId, maxBudget, onSubmit }: Proposa
     try {
       await onSubmit({
         requestId,
-        userId,
+        address,
         price: parseInt(price),
         estimatedDays: parseInt(days),
         message,

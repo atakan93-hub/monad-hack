@@ -78,7 +78,7 @@ export default function RequestDetailPage() {
 
   const handleSubmitProposal = async (data: {
     requestId: string;
-    userId: string;
+    address: string;
     price: number;
     estimatedDays: number;
     message: string;
@@ -290,7 +290,7 @@ export default function RequestDetailPage() {
         <div className="mt-10">
           <ProposalForm
             requestId={request.id}
-            userId={user.id}
+            address={user.address}
             maxBudget={request.budget}
             onSubmit={handleSubmitProposal}
           />
