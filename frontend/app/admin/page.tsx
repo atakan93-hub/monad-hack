@@ -45,6 +45,7 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_NEXT: Record<string, string> = {
   proposing: "Voting",
   voting: "Active",
+  active: "Completed",
 };
 
 const statusColors: Record<string, string> = {
@@ -170,7 +171,13 @@ export default function AdminPage() {
 
   function handleAdvance(round: Round) {
     if (round.onChainRoundId == null) return;
-    const nextStatus = round.status === "proposing" ? "voting" : "active";
+    const statusNextMap: Record<string, string> = {
+      proposing: "voting",
+      voting: "active",
+      active: "completed",
+    };
+    const nextStatus = statusNextMap[round.status];
+    if (!nextStatus) return;
     setAdvancingRoundId(round.id);
     setAdvancingNewStatus(nextStatus);
     advanceRound.write(BigInt(round.onChainRoundId));
@@ -393,7 +400,7 @@ export default function AdminPage() {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {(round.status === "proposing" || round.status === "voting") && (
+                    {STATUS_NEXT[round.status] && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -411,7 +418,7 @@ export default function AdminPage() {
                       </Button>
                     )}
 
-                    {round.status === "active" && (
+                    {round.status === "completed" && !round.winnerId && (
                       <Button
                         size="sm"
                         onClick={() => openWinnerSelector(round)}
