@@ -24,8 +24,6 @@ import { EscrowAbi } from "@/lib/contracts/EscrowAbi";
 import { decodeEventLog } from "viem";
 import type { TaskRequest, Proposal, User, EscrowDeal } from "@/lib/types";
 
-const isOnChain = CONTRACT_ADDRESSES.ESCROW !== "0x0000000000000000000000000000000000000000";
-
 const statusColors: Record<string, string> = {
   open: "bg-primary/20 text-primary border-primary/30",
   in_progress: "bg-accent/20 text-accent border-accent/30",
@@ -125,12 +123,17 @@ export default function RequestDetailPage() {
 
   const handleEscrowAction = async (action: "fund" | "complete" | "release" | "dispute" | "refund") => {
     if (!escrow) return;
+    if (!isConnected) {
+      setSyncError("Connect wallet first");
+      return;
+    }
     setSyncError(null);
     setIsSyncing(true);
     try {
       const dealId = BigInt(escrow.onChainDealId ?? 0);
 
-      if (isOnChain && isConnected) {
+      // On-chain tx (필수)
+      {
         if (action === "fund") {
           const amount = BigInt(escrow.amount) * BigInt(10 ** 18);
           await forgeApprove.approveAsync(CONTRACT_ADDRESSES.ESCROW, amount);
@@ -197,57 +200,78 @@ export default function RequestDetailPage() {
   };
 
   const handleAccept = async (proposalId: string) => {
-    const prop = proposals.find((p) => p.id === proposalId);
-    if (!prop) return;
-
     setSyncError(null);
     setIsSyncing(true);
     try {
-      let onChainDealId: string | undefined;
-
-      if (isOnChain && isConnected && prop.proposer) {
-        const agentAddr = prop.proposer.address as `0x${string}`;
-        const amount = BigInt(prop.price) * BigInt(10 ** 18);
-        const deadline = BigInt(Math.floor(Date.now() / 1000) + prop.estimatedDays * 86400);
-        const receipt = await createDeal.writeAsync(agentAddr, amount, deadline);
-
-        for (const log of receipt.logs) {
-          try {
-            const decoded = decodeEventLog({ abi: EscrowAbi, data: log.data, topics: log.topics });
-            if (decoded.eventName === "DealCreated") {
-              onChainDealId = String((decoded.args as { dealId: bigint }).dealId);
-              break;
-            }
-          } catch { /* not our event */ }
-        }
-      }
-
-      // Accept proposal (also sets request to in_progress)
       const acceptRes = await fetch("/api/market/proposals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "updateStatus", proposalId, status: "accepted", address, onChainDealId }),
+        body: JSON.stringify({ action: "updateStatus", proposalId, status: "accepted", address }),
       });
       if (!acceptRes.ok) {
         const err = await acceptRes.json().catch(() => ({}));
         throw new Error(err.error ?? `Accept failed (${acceptRes.status})`);
       }
 
-      // Create escrow record
+      const req = await getRequestById(id);
+      setRequest(req);
+      await reloadProposals();
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Accept failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleCreateEscrow = async () => {
+    const acceptedProp = proposals.find((p) => p.status === "accepted");
+    if (!acceptedProp || !acceptedProp.proposer) return;
+
+    if (!isConnected) {
+      setSyncError("Connect wallet to create escrow");
+      return;
+    }
+
+    setSyncError(null);
+    setIsSyncing(true);
+    try {
+      // 1. On-chain createDeal (필수)
+      const agentAddr = acceptedProp.proposer.address as `0x${string}`;
+      const amount = BigInt(acceptedProp.price) * BigInt(10 ** 18);
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + acceptedProp.estimatedDays * 86400);
+      const receipt = await createDeal.writeAsync(agentAddr, amount, deadline);
+
+      // 2. DealCreated 이벤트에서 dealId 추출
+      let onChainDealId: string | undefined;
+      for (const log of receipt.logs) {
+        try {
+          const decoded = decodeEventLog({ abi: EscrowAbi, data: log.data, topics: log.topics });
+          if (decoded.eventName === "DealCreated") {
+            onChainDealId = String((decoded.args as { dealId: bigint }).dealId);
+            break;
+          }
+        } catch { /* not our event */ }
+      }
+      if (!onChainDealId) throw new Error("DealCreated event not found");
+
+      // 3. DB sync (API가 on-chain deal 검증 후 저장)
       const syncRes = await fetch("/api/escrow/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "createEscrow", address, requestId: id, userId: prop.userId, amount: prop.price, onChainDealId }),
+        body: JSON.stringify({
+          action: "createEscrow",
+          address,
+          requestId: id,
+          userId: acceptedProp.userId,
+          amount: acceptedProp.price,
+          onChainDealId,
+        }),
       });
       if (!syncRes.ok) {
         const err = await syncRes.json().catch(() => ({}));
         throw new Error(err.error ?? `Escrow sync failed (${syncRes.status})`);
       }
 
-      // Reload data
-      const req = await getRequestById(id);
-      setRequest(req);
-      await reloadProposals();
       await reloadEscrow();
     } catch (err) {
       setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Transaction failed");
@@ -377,6 +401,35 @@ export default function RequestDetailPage() {
           <p className="text-sm text-destructive mt-3">{syncError}</p>
         )}
       </div>
+
+      {/* Create Escrow — in_progress but no escrow yet */}
+      {request.status === "in_progress" && !escrow && user?.id === request.requesterId && (
+        <CyberCard dots={false} className="mt-10 p-6">
+          <div className="relative z-[1] flex flex-col gap-4">
+            <h2 className="font-heading text-xl font-semibold">Create Escrow</h2>
+            {(() => {
+              const accepted = proposals.find((p) => p.status === "accepted");
+              if (!accepted) return <p className="text-sm text-muted-foreground">No accepted proposal found.</p>;
+              return (
+                <>
+                  <div className="flex gap-6 text-sm text-muted-foreground">
+                    <span>Agent: <span className="text-foreground font-medium">{accepted.proposer?.name ?? accepted.userId}</span></span>
+                    <span>Amount: <span className="text-primary font-semibold">{formatForge(accepted.price)} FORGE</span></span>
+                    <span>{accepted.estimatedDays} days</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleCreateEscrow}
+                    disabled={isSyncing}
+                  >
+                    {isSyncing ? "Processing..." : "Create Escrow"}
+                  </Button>
+                </>
+              );
+            })()}
+          </div>
+        </CyberCard>
+      )}
 
       {/* Escrow Status */}
       {escrow && (
