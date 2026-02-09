@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ClipboardList, Flame, Mail, Coins, Wallet } from "lucide-react";
 import { StatCard } from "@/components/features/common/StatCard";
+import { CyberCard } from "@/components/ui/CyberCard";
 import {
   getDashboardStats,
   getRequests,
@@ -71,22 +72,24 @@ export default function DashboardPage() {
   if (!isConnected) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center">
-          <Wallet className="w-8 h-8 text-accent" />
-        </div>
-        <h2 className="font-heading text-2xl font-bold">Connect Your Wallet</h2>
-        <p className="text-muted-foreground text-sm max-w-sm text-center">
-          Connect your wallet to access the dashboard and manage your tasks
-        </p>
-        <ConnectButton />
+        <CyberCard className="p-10 flex flex-col items-center gap-6">
+          <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 flex items-center justify-center relative z-[1]">
+            <Wallet className="w-8 h-8 text-cyan-400" />
+          </div>
+          <h2 className="font-heading text-2xl font-bold relative z-[1]">Connect Your Wallet</h2>
+          <p className="text-muted-foreground text-sm max-w-sm text-center relative z-[1]">
+            Connect your wallet to access the dashboard and manage your tasks
+          </p>
+          <div className="relative z-[1]">
+            <ConnectButton />
+          </div>
+        </CyberCard>
       </div>
     );
   }
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
-      <h1 className="font-heading text-3xl font-bold mb-8">Dashboard</h1>
-
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         <StatCard label="Total Requests" value={stats.totalRequests} icon={<ClipboardList className="w-5 h-5" />} />
@@ -99,93 +102,97 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-6">
         {/* Active Requests */}
-        <div>
-          <h2 className="font-heading text-xl font-semibold mb-4">
+        <CyberCard dots className="p-6">
+          <h2 className="font-heading text-lg font-semibold mb-4 relative z-[1]">
             My Active Requests
           </h2>
-          {activeRequests.length > 0 ? (
-            <div className="space-y-3">
-              {activeRequests.map((req) => (
-                <Link key={req.id} href={`/market/${req.id}`}>
-                  <div className="glass rounded-xl p-4 flex items-center justify-between
-                                  hover:border-accent/20 transition-all duration-300">
-                    <div>
-                      <p className="font-medium text-sm">{req.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {req.budget.toLocaleString()} FORGE •{" "}
-                        {req.proposals.length} proposals
-                      </p>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={statusColors[req.status]}
-                    >
-                      {req.status.replace("_", " ")}
-                    </Badge>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No active requests.
-            </p>
-          )}
-        </div>
-
-        {/* Received Proposals */}
-        <div>
-          <h2 className="font-heading text-xl font-semibold mb-4">
-            Received Proposals
-          </h2>
-          {recentProposals.length > 0 ? (
-            <div className="space-y-3">
-              {recentProposals.map((prop) => (
-                <div key={prop.id} className="glass rounded-xl p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={prop.proposer?.avatarUrl} />
-                        <AvatarFallback className="bg-secondary text-xs">
-                          {prop.proposer?.name?.charAt(0) ?? "?"}
-                        </AvatarFallback>
-                      </Avatar>
+          <div className="relative z-[1]">
+            {activeRequests.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {activeRequests.map((req) => (
+                  <Link key={req.id} href={`/market/${req.id}`}>
+                    <div className="p-4 border border-cyan-500/10 bg-white/[0.02] flex items-center justify-between
+                                    hover:border-cyan-500/25 transition-all duration-300">
                       <div>
-                        <p className="font-medium text-sm">
-                          {prop.proposer?.name ?? prop.userId}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {prop.requestTitle} •{" "}
-                          <span className="text-primary">
-                            {prop.price.toLocaleString()} FORGE
-                          </span>
+                        <p className="font-medium text-sm">{req.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {req.budget.toLocaleString()} FORGE &middot;{" "}
+                          {req.proposals.length} proposals
                         </p>
                       </div>
+                      <Badge
+                        variant="outline"
+                        className={statusColors[req.status]}
+                      >
+                        {req.status.replace("_", " ")}
+                      </Badge>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className={
-                        prop.status === "accepted"
-                          ? "bg-green-500/20 text-green-400 border-green-500/30"
-                          : prop.status === "rejected"
-                            ? "bg-red-500/20 text-red-400 border-red-500/30"
-                            : "bg-primary/20 text-primary border-primary/30"
-                      }
-                    >
-                      {prop.status}
-                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No active requests.
+              </p>
+            )}
+          </div>
+        </CyberCard>
+
+        {/* Received Proposals */}
+        <CyberCard dots className="p-6">
+          <h2 className="font-heading text-lg font-semibold mb-4 relative z-[1]">
+            Received Proposals
+          </h2>
+          <div className="relative z-[1]">
+            {recentProposals.length > 0 ? (
+              <div className="flex flex-col gap-3">
+                {recentProposals.map((prop) => (
+                  <div key={prop.id} className="p-4 border border-cyan-500/10 bg-white/[0.02]">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={prop.proposer?.avatarUrl} />
+                          <AvatarFallback className="bg-secondary text-xs">
+                            {prop.proposer?.name?.charAt(0) ?? "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {prop.proposer?.name ?? prop.userId}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {prop.requestTitle} &middot;{" "}
+                            <span className="text-primary">
+                              {prop.price.toLocaleString()} FORGE
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={
+                          prop.status === "accepted"
+                            ? "bg-green-500/20 text-green-400 border-green-500/30"
+                            : prop.status === "rejected"
+                              ? "bg-red-500/20 text-red-400 border-red-500/30"
+                              : "bg-primary/20 text-primary border-primary/30"
+                        }
+                      >
+                        {prop.status}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No proposals received.
-            </p>
-          )}
-        </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No proposals received.
+              </p>
+            )}
+          </div>
+        </CyberCard>
       </div>
     </div>
   );

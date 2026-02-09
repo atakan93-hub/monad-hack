@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CyberCard } from "@/components/ui/CyberCard";
 import { FileCode, Layout, BarChart3, ShieldCheck, Package, type LucideIcon } from "lucide-react";
 import type { TaskRequest } from "@/lib/types";
 
@@ -45,8 +45,8 @@ export function RequestCard({ request }: RequestCardProps) {
 
   return (
     <Link href={`/market/${request.id}`}>
-      <Card className="glass cursor-pointer card-hover-glow h-full">
-        <CardHeader className="pb-3">
+      <CyberCard className="cursor-pointer h-full p-5 flex flex-col gap-3">
+        <div className="relative z-[1] flex flex-col gap-3 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <CatIcon className={`w-4 h-4 ${cat.color}`} />
             <Badge variant="secondary">
@@ -56,18 +56,15 @@ export function RequestCard({ request }: RequestCardProps) {
               {request.status.replace("_", " ")}
             </Badge>
           </div>
-          <h3 className="font-heading font-semibold text-lg mt-2 leading-tight">
+          <h3 className="font-heading font-semibold text-lg leading-tight">
             {request.title}
           </h3>
-        </CardHeader>
-
-        <CardContent className="pb-3">
           <p className="text-sm text-muted-foreground line-clamp-2">
             {request.description}
           </p>
-        </CardContent>
+        </div>
 
-        <CardFooter className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
+        <div className="relative z-[1] flex items-center justify-between pt-3 border-t border-cyan-500/10">
           <span className="text-primary font-semibold text-sm">
             {request.budget.toLocaleString()} FORGE
           </span>
@@ -75,8 +72,8 @@ export function RequestCard({ request }: RequestCardProps) {
             <span>{request.proposals.length} proposals</span>
             <span>{daysLeft > 0 ? `${daysLeft}d left` : "Ended"}</span>
           </div>
-        </CardFooter>
-      </Card>
+        </div>
+      </CyberCard>
     </Link>
   );
 }

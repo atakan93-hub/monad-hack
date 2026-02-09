@@ -85,7 +85,9 @@ export default function MarketPage() {
             Browse tasks and submit proposals
           </p>
         </div>
-        <Button onClick={() => setShowNewRequest(true)}>New Request</Button>
+        <Button onClick={() => setShowNewRequest(true)} className="glow-amber-sm btn-hover-lift">
+          New Request
+        </Button>
       </div>
 
       {/* Content */}
@@ -117,7 +119,7 @@ export default function MarketPage() {
           <DialogHeader>
             <DialogTitle className="font-heading">Create New Request</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateRequest} className="space-y-4 mt-4">
+          <form onSubmit={handleCreateRequest} className="flex flex-col gap-4 mt-4">
             <div>
               <label className="text-sm text-muted-foreground block mb-1.5">Title</label>
               <Input
@@ -154,7 +156,7 @@ export default function MarketPage() {
                 <select
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value as RequestCategory)}
-                  className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm"
+                  className="w-full bg-background border border-input px-3 py-2 text-sm"
                 >
                   <option value="smart-contract">Smart Contract</option>
                   <option value="frontend">Frontend</option>

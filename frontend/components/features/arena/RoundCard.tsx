@@ -1,7 +1,7 @@
 "use client";
 
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CyberCard } from "@/components/ui/CyberCard";
 import type { Round } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
@@ -18,13 +18,6 @@ const statusLabels: Record<string, string> = {
   completed: "Completed",
 };
 
-const statusGlows: Record<string, string> = {
-  proposing: "hover:shadow-[0_0_20px_rgba(6,182,212,0.15)]",
-  voting: "hover:shadow-[0_0_20px_rgba(139,92,246,0.15)]",
-  active: "hover:shadow-[0_0_20px_rgba(245,158,11,0.15)]",
-  completed: "hover:shadow-[0_0_20px_rgba(16,185,129,0.15)]",
-};
-
 interface RoundCardProps {
   round: Round;
   topicCount: number;
@@ -34,32 +27,31 @@ interface RoundCardProps {
 
 export function RoundCard({ round, topicCount, entryCount, onClick }: RoundCardProps) {
   return (
-    <Card
-      className={`glass cursor-pointer transition-all duration-300 hover:-translate-y-1 ${statusGlows[round.status]}`}
+    <CyberCard
+      dots
+      className="cursor-pointer p-5 flex flex-col gap-3"
       onClick={() => onClick?.(round.id)}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <Badge variant="outline" className={statusColors[round.status]}>
-            {statusLabels[round.status]}
-          </Badge>
-          <span className="text-sm font-heading font-semibold text-muted-foreground">
-            Round #{round.roundNumber}
-          </span>
-        </div>
-      </CardHeader>
+      <div className="relative z-[1] flex items-center justify-between">
+        <Badge variant="outline" className={statusColors[round.status]}>
+          {statusLabels[round.status]}
+        </Badge>
+        <span className="text-sm font-heading font-semibold text-muted-foreground">
+          Round #{round.roundNumber}
+        </span>
+      </div>
 
-      <CardContent className="pb-3">
+      <div className="relative z-[1]">
         <div className="text-2xl font-bold text-primary">
           {round.prize.toLocaleString()} FORGE
         </div>
         <p className="text-sm text-muted-foreground mt-1">Prize Pool</p>
-      </CardContent>
+      </div>
 
-      <CardFooter className="flex items-center justify-between pt-3 border-t border-white/[0.06] text-sm text-muted-foreground">
+      <div className="relative z-[1] flex items-center justify-between pt-3 border-t border-cyan-500/10 text-sm text-muted-foreground">
         <span>{topicCount} topics</span>
         <span>{entryCount} entries</span>
-      </CardFooter>
-    </Card>
+      </div>
+    </CyberCard>
   );
 }

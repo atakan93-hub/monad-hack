@@ -1,3 +1,5 @@
+import { CyberCard } from "@/components/ui/CyberCard";
+
 interface StatCardProps {
   label: string;
   value: string | number;
@@ -6,18 +8,18 @@ interface StatCardProps {
 
 export function StatCard({ label, value, icon }: StatCardProps) {
   return (
-    <div className="glass rounded-xl p-6">
-      <div className="flex items-center justify-between">
+    <CyberCard progressBar dots className="p-5">
+      <div className="flex items-start justify-between relative z-[1]">
         <div>
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold font-heading mt-1">{value}</p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
+          <p className="text-3xl font-bold font-heading text-primary mt-2">{value}</p>
         </div>
         {icon && (
-          <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent">
+          <div className="w-10 h-10 flex items-center justify-center text-cyan-400/60">
             {icon}
           </div>
         )}
       </div>
-    </div>
+    </CyberCard>
   );
 }

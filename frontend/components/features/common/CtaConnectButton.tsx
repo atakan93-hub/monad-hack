@@ -13,8 +13,12 @@ export function CtaConnectButton() {
 
   if (isConnected && address) {
     return (
-      <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg
-                      glass border border-white/[0.06] text-sm font-medium">
+      <div className="relative inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium
+                      border border-cyan-500/30 bg-cyan-500/5">
+        <span className="absolute -top-px -left-px w-2 h-2 border-t border-l border-cyan-400" />
+        <span className="absolute -top-px -right-px w-2 h-2 border-t border-r border-cyan-400" />
+        <span className="absolute -bottom-px -left-px w-2 h-2 border-b border-l border-cyan-400" />
+        <span className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-cyan-400" />
         <div className="size-5 rounded-full bg-gradient-to-br from-primary/60 to-cyan-400/60 flex items-center justify-center text-[9px] font-bold text-white">
           {address.slice(2, 4).toUpperCase()}
         </div>
