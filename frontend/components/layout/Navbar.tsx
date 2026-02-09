@@ -54,10 +54,10 @@ export function Navbar() {
               <Link
                 key={href}
                 href={href}
-                className={`px-4 py-1.5 text-sm transition-all duration-200 ${
+                className={`px-4 py-1.5 text-sm tracking-wide transition-all duration-200 ${
                   isActive
                     ? "cyber-nav-active font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/[0.03]"
+                    : "text-muted-foreground cyber-nav-idle"
                 }`}
               >
                 {label}
@@ -70,16 +70,23 @@ export function Navbar() {
             return (
               <Link
                 href="/admin"
-                className={`px-4 py-1.5 text-sm transition-all duration-200 ${
+                className={`px-4 py-1.5 text-sm tracking-wide transition-all duration-200 ${
                   isActive
                     ? "cyber-nav-active font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/[0.03]"
+                    : "text-muted-foreground cyber-nav-idle"
                 }`}
               >
                 Admin
               </Link>
             );
           })()}
+        </div>
+
+        {/* Tagline */}
+        <div className="hidden lg:flex items-center gap-3 text-[11px] tracking-[0.2em] uppercase text-muted-foreground/40 select-none">
+          <span className="w-8 h-px bg-gradient-to-r from-transparent to-cyan-500/20" />
+          Build · Compete · Earn
+          <span className="w-8 h-px bg-gradient-to-l from-transparent to-cyan-500/20" />
         </div>
 
         {/* Wallet connection */}

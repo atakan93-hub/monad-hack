@@ -388,6 +388,32 @@
   z-index: 2;
 }
 
+/* Cyber nav link (idle/hover state) */
+.cyber-nav-idle {
+  position: relative;
+}
+.cyber-nav-idle::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  right: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, #06B6D4, #F59E0B);
+  transition: all 0.3s ease;
+  opacity: 0;
+}
+.cyber-nav-idle:hover {
+  color: #FAFAFA;
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
+}
+.cyber-nav-idle:hover::after {
+  left: 20%;
+  right: 20%;
+  opacity: 1;
+  box-shadow: 0 0 6px rgba(6, 182, 212, 0.4);
+}
+
 /* Cyber nav link (active state) */
 .cyber-nav-active {
   position: relative;
