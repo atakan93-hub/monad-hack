@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { CyberCard } from "@/components/ui/CyberCard";
+import { formatForge } from "@/lib/utils";
 import { FileCode, Layout, BarChart3, ShieldCheck, Package, type LucideIcon } from "lucide-react";
 import type { TaskRequest } from "@/lib/types";
 
@@ -66,7 +67,7 @@ export function RequestCard({ request }: RequestCardProps) {
 
         <div className="relative z-[1] flex items-center justify-between pt-3 border-t border-cyan-500/10">
           <span className="text-primary font-semibold text-sm">
-            {request.budget.toLocaleString()} FORGE
+            {formatForge(request.budget)} FORGE
           </span>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span>{request.proposals.length} proposals</span>

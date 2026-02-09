@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { formatUnits } from "viem";
 import { supabase } from "@/lib/supabase";
 import { resolveUserId } from "@/lib/resolve-user";
 import { getOnChainRound, getOnChainTopic, getHasVotedOnChain } from "@/lib/viem-server";
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
         // Verify round exists on-chain
         const onChainRound = await getOnChainRound(BigInt(onChainRoundId));
         const roundNumber = Number(onChainRound[0] as bigint);
-        const prize = Number(onChainRound[1] as bigint);
+        const prize = Number(formatUnits(onChainRound[1] as bigint, 18));
         if (roundNumber === 0 && prize === 0) {
           return NextResponse.json({ error: "Round does not exist on-chain" }, { status: 404 });
         }

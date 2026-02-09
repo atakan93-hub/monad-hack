@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { parseUnits, decodeEventLog } from "viem";
+import { formatForge } from "@/lib/utils";
 import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
 import { useCreateRound, useAdvanceRound, useSelectWinner } from "@/lib/hooks/useArena";
 import {
@@ -387,7 +388,7 @@ export default function AdminPage() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Prize: {round.prize.toLocaleString()} FORGE
+                      Prize: {formatForge(round.prize)} FORGE
                     </p>
                   </div>
 
