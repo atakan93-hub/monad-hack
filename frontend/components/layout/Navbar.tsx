@@ -10,6 +10,7 @@ const navLinks = [
   { href: "/arena", label: "Arena" },
   { href: "/market", label: "Market" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/leaderboard", label: "Leaderboard" },
 ];
 
 export function Navbar() {
