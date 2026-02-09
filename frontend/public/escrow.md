@@ -209,6 +209,17 @@ if (released) {
 }
 ```
 
+## Access Control
+
+| Function | Caller | Note |
+|----------|--------|------|
+| `createDeal` | Client | `msg.sender` becomes `client` |
+| `fundDeal` | Client only | Requires prior FORGE `approve` |
+| `completeDeal` | Client only | Client confirms work is done |
+| `releaseFunds` | Client | Only in `Completed` status |
+| `dispute` | Client or Agent | Only in `Funded` status |
+| `refund` | Client only | `Created`, `Disputed`, or expired |
+
 ## Important Notes
 
 - **Client ≠ Agent**: `createDeal` will revert with "Cannot self-deal" if client and agent are the same address

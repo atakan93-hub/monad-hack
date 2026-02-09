@@ -15,12 +15,14 @@ import {
   getRequestById,
   getProposalsByRequest,
   getUserById,
+  getEscrowByRequestId,
 } from "@/lib/supabase-api";
-import { useCreateDeal } from "@/lib/hooks/useEscrow";
+import { useCreateDeal, useFundDeal, useCompleteDeal, useReleaseFunds, useDisputeDeal, useRefundDeal } from "@/lib/hooks/useEscrow";
+import { useForgeApprove } from "@/lib/hooks/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import { EscrowAbi } from "@/lib/contracts/EscrowAbi";
 import { decodeEventLog } from "viem";
-import type { TaskRequest, Proposal, User } from "@/lib/types";
+import type { TaskRequest, Proposal, User, EscrowDeal } from "@/lib/types";
 
 const isOnChain = CONTRACT_ADDRESSES.ESCROW !== "0x0000000000000000000000000000000000000000";
 
@@ -51,10 +53,22 @@ export default function RequestDetailPage() {
   const { isConnected } = useAccount();
   const { address, user } = useUser();
   const createDeal = useCreateDeal();
+  const fundDeal = useFundDeal();
+  const completeDeal = useCompleteDeal();
+  const releaseFunds = useReleaseFunds();
+  const disputeDeal = useDisputeDeal();
+  const refundDeal = useRefundDeal();
+  const forgeApprove = useForgeApprove();
   const [request, setRequest] = useState<TaskRequest | null>(null);
   const [proposals, setProposals] = useState<ProposalWithUser[]>([]);
+  const [escrow, setEscrow] = useState<EscrowDeal | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  const reloadEscrow = async () => {
+    const esc = await getEscrowByRequestId(id);
+    setEscrow(esc);
+  };
 
   useEffect(() => {
     async function load() {
@@ -70,6 +84,8 @@ export default function RequestDetailPage() {
           }))
         );
         setProposals(withUsers);
+        const esc = await getEscrowByRequestId(id);
+        setEscrow(esc);
       }
     }
     load();
@@ -107,6 +123,79 @@ export default function RequestDetailPage() {
     setProposals(withUsers);
   };
 
+  const handleEscrowAction = async (action: "fund" | "complete" | "release" | "dispute" | "refund") => {
+    if (!escrow) return;
+    setSyncError(null);
+    setIsSyncing(true);
+    try {
+      const dealId = BigInt(escrow.onChainDealId ?? 0);
+
+      if (isOnChain && isConnected) {
+        if (action === "fund") {
+          const amount = BigInt(escrow.amount) * BigInt(10 ** 18);
+          await forgeApprove.approveAsync(CONTRACT_ADDRESSES.ESCROW, amount);
+          await fundDeal.writeAsync(dealId);
+        } else if (action === "complete") {
+          await completeDeal.writeAsync(dealId);
+        } else if (action === "release") {
+          await releaseFunds.writeAsync(dealId);
+        } else if (action === "dispute") {
+          await disputeDeal.writeAsync(dealId);
+        } else if (action === "refund") {
+          await refundDeal.writeAsync(dealId);
+        }
+      }
+
+      const syncActions = { fund: "funded", complete: "completed", dispute: "disputed", refund: "refunded" } as const;
+      if (action in syncActions) {
+        const dbStatus = syncActions[action as keyof typeof syncActions];
+        const syncRes = await fetch("/api/escrow/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "updateStatus", escrowId: escrow.id, status: dbStatus }),
+        });
+        if (!syncRes.ok) {
+          const err = await syncRes.json().catch(() => ({}));
+          throw new Error(err.error ?? `Sync failed (${syncRes.status})`);
+        }
+      }
+
+      if (action === "release") {
+        const reqRes = await fetch("/api/market/requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "updateStatus", requestId: id, status: "completed", address }),
+        });
+        if (!reqRes.ok) {
+          const err = await reqRes.json().catch(() => ({}));
+          throw new Error(err.error ?? `Request update failed (${reqRes.status})`);
+        }
+        const req = await getRequestById(id);
+        setRequest(req);
+      }
+
+      if (action === "refund") {
+        const reqRes = await fetch("/api/market/requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "updateStatus", requestId: id, status: "cancelled", address }),
+        });
+        if (!reqRes.ok) {
+          const err = await reqRes.json().catch(() => ({}));
+          throw new Error(err.error ?? `Request update failed (${reqRes.status})`);
+        }
+        const req = await getRequestById(id);
+        setRequest(req);
+      }
+
+      await reloadEscrow();
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Transaction failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleAccept = async (proposalId: string) => {
     const prop = proposals.find((p) => p.id === proposalId);
     if (!prop) return;
@@ -137,7 +226,7 @@ export default function RequestDetailPage() {
       const acceptRes = await fetch("/api/market/proposals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "updateStatus", proposalId, status: "accepted" }),
+        body: JSON.stringify({ action: "updateStatus", proposalId, status: "accepted", address, onChainDealId }),
       });
       if (!acceptRes.ok) {
         const err = await acceptRes.json().catch(() => ({}));
@@ -255,7 +344,7 @@ export default function RequestDetailPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {prop.status === "pending" && request.status === "open" && (
+                    {prop.status === "pending" && request.status === "open" && user?.id === request.requesterId && (
                       <Button
                         size="sm"
                         onClick={() => handleAccept(prop.id)}
@@ -287,6 +376,115 @@ export default function RequestDetailPage() {
           <p className="text-sm text-destructive mt-3">{syncError}</p>
         )}
       </div>
+
+      {/* Escrow Status */}
+      {escrow && (
+        <CyberCard dots={false} className="mt-10 p-6">
+          <div className="relative z-[1] flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-heading text-xl font-semibold">Escrow</h2>
+              <Badge
+                variant="outline"
+                className={
+                  escrow.status === "funded"
+                    ? "bg-accent/20 text-accent border-accent/30"
+                    : escrow.status === "completed"
+                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                    : escrow.status === "disputed"
+                    ? "bg-red-500/20 text-red-400 border-red-500/30"
+                    : escrow.status === "refunded"
+                    ? "bg-muted text-muted-foreground border-border"
+                    : "bg-primary/20 text-primary border-primary/30"
+                }
+              >
+                {escrow.status}
+              </Badge>
+            </div>
+
+            <div className="flex gap-6 text-sm text-muted-foreground">
+              <span>
+                Amount:{" "}
+                <span className="text-primary font-semibold">
+                  {formatForge(escrow.amount)} FORGE
+                </span>
+              </span>
+              {escrow.onChainDealId != null && (
+                <span>Deal #{escrow.onChainDealId}</span>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              {escrow.status === "created" && user?.id === escrow.requesterId && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={() => handleEscrowAction("fund")}
+                    disabled={isSyncing}
+                  >
+                    {isSyncing ? "Processing..." : "Fund Deal"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEscrowAction("refund")}
+                    disabled={isSyncing}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              )}
+              {escrow.status === "funded" && user?.id === escrow.requesterId && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={() => handleEscrowAction("complete")}
+                    disabled={isSyncing}
+                  >
+                    {isSyncing ? "Processing..." : "Approve Work"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleEscrowAction("dispute")}
+                    disabled={isSyncing}
+                  >
+                    {isSyncing ? "Processing..." : "Dispute"}
+                  </Button>
+                </>
+              )}
+              {escrow.status === "funded" && user?.id === escrow.userId && user?.id !== escrow.requesterId && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleEscrowAction("dispute")}
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? "Processing..." : "Dispute"}
+                </Button>
+              )}
+              {escrow.status === "completed" && user?.id === escrow.requesterId && (
+                <Button
+                  size="sm"
+                  onClick={() => handleEscrowAction("release")}
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? "Processing..." : "Release Funds"}
+                </Button>
+              )}
+              {escrow.status === "disputed" && user?.id === escrow.requesterId && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleEscrowAction("refund")}
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? "Processing..." : "Refund"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CyberCard>
+      )}
 
       {/* Submit Proposal Form */}
       {request.status === "open" && user && (
