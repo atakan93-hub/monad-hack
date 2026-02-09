@@ -56,16 +56,29 @@ export async function POST(req: NextRequest) {
 
         if (escrowRow.on_chain_deal_id != null) {
           const onChainDeal = await getOnChainDeal(BigInt(escrowRow.on_chain_deal_id));
-          // status enum: 0=Created, 1=Funded, 2=Completed, 3=Disputed, 4=Refunded
-          const statusMap: Record<number, string> = {
-            0: "created", 1: "funded", 2: "completed", 3: "disputed", 4: "refunded",
-          };
-          const onChainStatus = statusMap[Number(onChainDeal[4])] ?? "unknown";
-          if (onChainStatus !== status) {
-            return NextResponse.json(
-              { error: `On-chain status is "${onChainStatus}", not "${status}"` },
-              { status: 403 },
-            );
+          const onChainStatusNum = Number(onChainDeal[4]);
+
+          if (status === "released") {
+            // released = on-chain Completed(2) + amount drained to 0
+            const onChainAmount = BigInt(onChainDeal[2] as bigint);
+            if (onChainStatusNum !== 2 || onChainAmount !== 0n) {
+              return NextResponse.json(
+                { error: "On-chain deal not yet released (status must be Completed and amount must be 0)" },
+                { status: 403 },
+              );
+            }
+          } else {
+            // status enum: 0=Created, 1=Funded, 2=Completed, 3=Disputed, 4=Refunded
+            const statusMap: Record<number, string> = {
+              0: "created", 1: "funded", 2: "completed", 3: "disputed", 4: "refunded",
+            };
+            const onChainStatus = statusMap[onChainStatusNum] ?? "unknown";
+            if (onChainStatus !== status) {
+              return NextResponse.json(
+                { error: `On-chain status is "${onChainStatus}", not "${status}"` },
+                { status: 403 },
+              );
+            }
           }
         }
 

@@ -149,7 +149,7 @@ export default function RequestDetailPage() {
         }
       }
 
-      const syncActions = { fund: "funded", complete: "completed", dispute: "disputed", refund: "refunded" } as const;
+      const syncActions = { fund: "funded", complete: "completed", release: "released", dispute: "disputed", refund: "refunded" } as const;
       if (action in syncActions) {
         const dbStatus = syncActions[action as keyof typeof syncActions];
         const syncRes = await fetch("/api/escrow/sync", {
@@ -444,6 +444,8 @@ export default function RequestDetailPage() {
                     ? "bg-accent/20 text-accent border-accent/30"
                     : escrow.status === "completed"
                     ? "bg-green-500/20 text-green-400 border-green-500/30"
+                    : escrow.status === "released"
+                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
                     : escrow.status === "disputed"
                     ? "bg-red-500/20 text-red-400 border-red-500/30"
                     : escrow.status === "refunded"
@@ -504,6 +506,16 @@ export default function RequestDetailPage() {
                   >
                     {isSyncing ? "Processing..." : "Dispute"}
                   </Button>
+                  {daysLeft <= 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEscrowAction("refund")}
+                      disabled={isSyncing}
+                    >
+                      {isSyncing ? "Processing..." : "Refund (Expired)"}
+                    </Button>
+                  )}
                 </>
               )}
               {escrow.status === "funded" && user?.id === escrow.userId && user?.id !== escrow.requesterId && (

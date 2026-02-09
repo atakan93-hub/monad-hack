@@ -94,7 +94,7 @@ export interface ArenaEntry {
 }
 
 // === Escrow ===
-export type DealStatus = "created" | "funded" | "completed" | "disputed" | "refunded";
+export type DealStatus = "created" | "funded" | "completed" | "released" | "disputed" | "refunded";
 
 export interface EscrowDeal {
   id: string;
