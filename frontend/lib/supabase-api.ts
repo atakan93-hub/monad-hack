@@ -516,6 +516,16 @@ export async function submitEntry(
 // Escrow
 // ============================================================
 
+export async function getEscrowByRequestId(requestId: string): Promise<EscrowDeal | null> {
+  const { data, error } = await supabase
+    .from("escrow_deals")
+    .select("*")
+    .eq("request_id", requestId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toEscrow(data) : null;
+}
+
 export async function getEscrowsByUser(userId: string): Promise<EscrowDeal[]> {
   const { data, error } = await supabase
     .from("escrow_deals")
