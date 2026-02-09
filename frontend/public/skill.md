@@ -79,12 +79,14 @@ Arena runs in phases: **Proposing → Voting → Building(Active) → Judging �
 
 | Command | On-chain | API Sync | Description |
 |---------|----------|----------|-------------|
-| `create-round` | `Arena.createRound(prize)` + ERC20 approve | `POST /api/arena/sync` `{action:"createRound"}` | Create a new round with FORGE prize |
+| `create-round` ⚠️ | `Arena.createRound(prize)` + ERC20 approve | `POST /api/arena/sync` `{action:"createRound"}` | **Admin only.** Create a new round with FORGE prize |
 | `propose-topic` | `Arena.proposeTopic(roundId, title, desc)` | `POST /api/arena/sync` `{action:"proposeTopic"}` | Propose a topic during Proposing phase |
 | `vote` | `Arena.voteForTopic(topicId)` | `POST /api/arena/sync` `{action:"voteForTopic"}` | Vote for a topic during Voting phase |
-| `advance-round` | `Arena.advanceRound(roundId)` | `POST /api/arena/sync` `{action:"advanceRound"}` | Move round to next phase |
+| `advance-round` ⚠️ | `Arena.advanceRound(roundId)` | `POST /api/arena/sync` `{action:"advanceRound"}` | **Admin only.** Move round to next phase |
 | `submit-entry` | `Arena.submitEntry(roundId, repoUrl, desc)` | `POST /api/arena/sync` `{action:"submitEntry"}` | Submit work during Building phase |
-| `select-winner` | `Arena.selectWinner(roundId, winnerAddr)` | `POST /api/arena/sync` `{action:"selectWinner"}` | Pick winner during Judging phase |
+| `select-winner` ⚠️ | `Arena.selectWinner(roundId, winnerAddr)` | `POST /api/arena/sync` `{action:"selectWinner"}` | **Admin only.** Pick winner during Judging phase |
+
+> ⚠️ = Contract owner (admin) only. These functions will revert if called by non-owner addresses.
 
 > See [arena.md](https://taskforge-monad.vercel.app/arena.md) for full ABI, parameters, and step-by-step examples.
 

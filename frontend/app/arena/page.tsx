@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAccount } from "wagmi";
 import { useUser } from "@/lib/hooks/useUser";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ const tabs: { value: RoundStatus | "all"; label: string }[] = [
   { value: "proposing", label: "Proposing" },
   { value: "voting", label: "Voting" },
   { value: "active", label: "Active" },
+  { value: "judging", label: "Judging" },
   { value: "completed", label: "Completed" },
 ];
 
@@ -45,6 +46,7 @@ const statusColors: Record<string, string> = {
   proposing: "bg-accent/20 text-accent border-accent/30",
   voting: "bg-purple-500/20 text-purple-400 border-purple-500/30",
   active: "bg-primary/20 text-primary border-primary/30",
+  judging: "bg-orange-500/20 text-orange-400 border-orange-500/30",
   completed: "bg-green-500/20 text-green-400 border-green-500/30",
 };
 
@@ -52,6 +54,7 @@ const statusBanners: Record<string, string> = {
   proposing: "Topic proposals are open",
   voting: "Voting in progress",
   active: "Competition is live",
+  judging: "Judging in progress",
   completed: "Round completed",
 };
 
@@ -77,14 +80,12 @@ export default function ArenaPage() {
     ? BigInt(selectedRound.onChainRoundId)
     : 0n;
   const { data: forgeBalance } = useForgeBalance();
-  const { data: alreadyVoted } = useHasVoted(roundIdNum);
+  const { data: alreadyVoted, refetch: refetchVoted } = useHasVoted(roundIdNum);
   const votingPower = forgeBalance ? Number(formatUnits(forgeBalance, 18)) : 0;
   const canVote = isConnected && votingPower > 0 && !alreadyVoted;
 
-  // Track which topic/round is being voted/proposed/submitted for Supabase sync
-  const pendingVoteTopicId = useRef<string | null>(null);
-  const pendingProposeData = useRef<{ title: string; description: string } | null>(null);
-  const pendingEntryData = useRef<{ repoUrl: string; description: string } | null>(null);
+  // Track DB sync loading
+  const [isVoteSyncing, setIsVoteSyncing] = useState(false);
 
   // Topic proposal form
   const [newTitle, setNewTitle] = useState("");
@@ -143,8 +144,22 @@ export default function ArenaPage() {
   const handleVote = async (topicId: string) => {
     const topic = topics.find((t) => t.id === topicId);
     if (isOnChain && isConnected && topic?.onChainTopicId != null) {
-      pendingVoteTopicId.current = topicId;
-      voteHook.write(BigInt(topic.onChainTopicId));
+      try {
+        await voteHook.writeAsync(BigInt(topic.onChainTopicId));
+        setIsVoteSyncing(true);
+        await fetch("/api/arena/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "voteForTopic", topicId, address }),
+        });
+        if (selectedRound) {
+          const t = await getTopicsByRound(selectedRound.id);
+          setTopics(t);
+        }
+        await refetchVoted();
+      } catch { /* tx rejected or failed */ } finally {
+        setIsVoteSyncing(false);
+      }
     } else {
       await fetch("/api/arena/sync", {
         method: "POST",
@@ -157,38 +172,49 @@ export default function ArenaPage() {
       }
     }
   };
-
-  // Sync DB after on-chain vote confirmation
-  useEffect(() => {
-    if (!voteHook.isSuccess || !pendingVoteTopicId.current) return;
-    const topicId = pendingVoteTopicId.current;
-    pendingVoteTopicId.current = null;
-
-    (async () => {
-      await fetch("/api/arena/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "voteForTopic", topicId, address }),
-      });
-      if (selectedRound) {
-        const t = await getTopicsByRound(selectedRound.id);
-        setTopics(t);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [voteHook.isSuccess]);
 
   const handleProposeTopic = async () => {
     if (!selectedRound || !newTitle.trim()) return;
+    const title = newTitle.trim();
+    const description = newDescription.trim();
+
     if (isOnChain && isConnected) {
-      pendingProposeData.current = { title: newTitle.trim(), description: newDescription.trim() };
-      proposeHook.write(
-        BigInt(selectedRound.onChainRoundId ?? 0),
-        newTitle.trim(),
-        newDescription.trim(),
-      );
-      setNewTitle("");
-      setNewDescription("");
+      try {
+        const receipt = await proposeHook.writeAsync(
+          BigInt(selectedRound.onChainRoundId ?? 0),
+          title,
+          description,
+        );
+        setNewTitle("");
+        setNewDescription("");
+
+        let onChainTopicId: string | undefined;
+        for (const log of receipt.logs) {
+          try {
+            const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+            if (decoded.eventName === "TopicProposed") {
+              onChainTopicId = String((decoded.args as { topicId: bigint }).topicId);
+              break;
+            }
+          } catch { /* not our event */ }
+        }
+
+        await fetch("/api/arena/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "proposeTopic",
+            roundId: selectedRound.id,
+            address,
+            title,
+            description,
+            onChainTopicId,
+          }),
+        });
+        const t = await getTopicsByRound(selectedRound.id);
+        setTopics(t);
+        await loadRounds();
+      } catch { /* tx rejected or failed */ }
     } else {
       await fetch("/api/arena/sync", {
         method: "POST",
@@ -197,8 +223,8 @@ export default function ArenaPage() {
           action: "proposeTopic",
           roundId: selectedRound.id,
           address,
-          title: newTitle.trim(),
-          description: newDescription.trim(),
+          title,
+          description,
         }),
       });
       setNewTitle("");
@@ -208,55 +234,48 @@ export default function ArenaPage() {
       await loadRounds();
     }
   };
-
-  // Sync DB after on-chain propose confirmation
-  useEffect(() => {
-    if (!proposeHook.isSuccess || !proposeHook.receipt || !selectedRound || !pendingProposeData.current) return;
-    const data = pendingProposeData.current;
-    pendingProposeData.current = null;
-
-    let onChainTopicId: string | undefined;
-    for (const log of proposeHook.receipt.logs) {
-      try {
-        const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
-        if (decoded.eventName === "TopicProposed") {
-          onChainTopicId = String((decoded.args as { topicId: bigint }).topicId);
-          break;
-        }
-      } catch { /* not our event */ }
-    }
-
-    (async () => {
-      await fetch("/api/arena/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "proposeTopic",
-          roundId: selectedRound.id,
-          address,
-          title: data.title,
-          description: data.description,
-          onChainTopicId,
-        }),
-      });
-      const t = await getTopicsByRound(selectedRound.id);
-      setTopics(t);
-      await loadRounds();
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proposeHook.isSuccess]);
 
   const handleSubmitEntry = async () => {
     if (!selectedRound || !entryRepoUrl.trim()) return;
+    const repoUrl = entryRepoUrl.trim();
+    const description = entryDescription.trim();
+
     if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
-      pendingEntryData.current = { repoUrl: entryRepoUrl.trim(), description: entryDescription.trim() };
-      entryHook.write(
-        BigInt(selectedRound.onChainRoundId),
-        entryRepoUrl.trim(),
-        entryDescription.trim(),
-      );
-      setEntryRepoUrl("");
-      setEntryDescription("");
+      try {
+        const receipt = await entryHook.writeAsync(
+          BigInt(selectedRound.onChainRoundId),
+          repoUrl,
+          description,
+        );
+        setEntryRepoUrl("");
+        setEntryDescription("");
+
+        let onChainEntryId: string | undefined;
+        for (const log of receipt.logs) {
+          try {
+            const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+            if (decoded.eventName === "EntrySubmitted") {
+              onChainEntryId = String((decoded.args as { entryId: bigint }).entryId);
+              break;
+            }
+          } catch { /* not our event */ }
+        }
+
+        await fetch("/api/arena/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "submitEntry",
+            roundId: selectedRound.id,
+            address,
+            repoUrl,
+            description,
+            onChainEntryId,
+          }),
+        });
+        const e = await getEntriesByRound(selectedRound.id);
+        setEntries(e);
+      } catch { /* tx rejected or failed */ }
     } else {
       await fetch("/api/arena/sync", {
         method: "POST",
@@ -265,8 +284,8 @@ export default function ArenaPage() {
           action: "submitEntry",
           roundId: selectedRound.id,
           address,
-          repoUrl: entryRepoUrl.trim(),
-          description: entryDescription.trim(),
+          repoUrl,
+          description,
         }),
       });
       setEntryRepoUrl("");
@@ -275,42 +294,6 @@ export default function ArenaPage() {
       setEntries(e);
     }
   };
-
-  // Sync DB after on-chain entry submission
-  useEffect(() => {
-    if (!entryHook.isSuccess || !entryHook.receipt || !selectedRound || !pendingEntryData.current) return;
-    const data = pendingEntryData.current;
-    pendingEntryData.current = null;
-
-    let onChainEntryId: string | undefined;
-    for (const log of entryHook.receipt.logs) {
-      try {
-        const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
-        if (decoded.eventName === "EntrySubmitted") {
-          onChainEntryId = String((decoded.args as { entryId: bigint }).entryId);
-          break;
-        }
-      } catch { /* not our event */ }
-    }
-
-    (async () => {
-      await fetch("/api/arena/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "submitEntry",
-          roundId: selectedRound.id,
-          address,
-          repoUrl: data.repoUrl,
-          description: data.description,
-          onChainEntryId,
-        }),
-      });
-      const e = await getEntriesByRound(selectedRound.id);
-      setEntries(e);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entryHook.isSuccess]);
 
   const selectedTopic = topics.find(
     (t) => t.id === selectedRound?.selectedTopicId
@@ -464,6 +447,7 @@ export default function ArenaPage() {
                           disabled={!canVote}
                           isPending={voteHook.isPending}
                           isConfirming={voteHook.isConfirming}
+                          isSyncing={isVoteSyncing}
                         />
                       </TopicCard>
                     ))}
@@ -528,6 +512,44 @@ export default function ArenaPage() {
                         {entryHook.isPending ? "Sign tx..." : entryHook.isConfirming ? "Confirming..." : "Submit Entry"}
                       </Button>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Judging: show entries, no submission */}
+              {selectedRound.status === "judging" && (
+                <div className="flex flex-col gap-4 mt-4">
+                  {selectedTopic && (
+                    <CyberCard dots={false} className="p-4 !border-orange-500/20">
+                      <div className="relative z-[1]">
+                        <p className="text-xs text-muted-foreground mb-1">
+                          Selected Topic
+                        </p>
+                        <h4 className="font-heading font-semibold">
+                          {selectedTopic.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {selectedTopic.description}
+                        </p>
+                      </div>
+                    </CyberCard>
+                  )}
+
+                  <h4 className="font-semibold text-sm">
+                    Entries ({entries.length}) — judging in progress
+                  </h4>
+                  {entries.map((entry) => (
+                    <EntryCard
+                      key={entry.id}
+                      entry={entry}
+                      agentName={userNames[entry.userId]}
+                    />
+                  ))}
+
+                  {entries.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No entries were submitted.
+                    </p>
                   )}
                 </div>
               )}

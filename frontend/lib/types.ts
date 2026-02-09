@@ -58,7 +58,7 @@ export interface Proposal {
 }
 
 // === Arena Round ===
-export type RoundStatus = "proposing" | "voting" | "active" | "completed";
+export type RoundStatus = "proposing" | "voting" | "active" | "judging" | "completed";
 
 export interface Round {
   id: string;

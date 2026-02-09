@@ -1,6 +1,7 @@
 "use client";
 
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi";
+import type { TransactionReceipt } from "viem";
 import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 
@@ -9,102 +10,68 @@ const arenaConfig = {
   abi: ArenaAbi,
 } as const;
 
+/** Shared base for all arena write hooks: sign → wait → assert success */
+function useArenaWrite() {
+  const { writeContractAsync, data: hash, isPending, error } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const publicClient = usePublicClient();
+
+  const sendAndWait = async (functionName: string, args: unknown[]) => {
+    const h = await writeContractAsync({ ...arenaConfig, functionName, args } as Parameters<typeof writeContractAsync>[0]);
+    const receipt = await publicClient!.waitForTransactionReceipt({ hash: h });
+    if (receipt.status === "reverted") throw new Error(`Transaction reverted: ${functionName}`);
+    return receipt as TransactionReceipt;
+  };
+
+  return { sendAndWait, hash, isPending, isConfirming, isSuccess, error };
+}
+
 // === Admin ===
 
 export function useCreateRound() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (prize: bigint) =>
-    writeContract({ ...arenaConfig, functionName: "createRound", args: [prize] });
-
-  return { write, hash, receipt, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useArenaWrite();
+  const writeAsync = (prize: bigint) => sendAndWait("createRound", [prize]);
+  return { writeAsync, ...rest };
 }
 
 export function useAdvanceRound() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (roundId: bigint) =>
-    writeContract({ ...arenaConfig, functionName: "advanceRound", args: [roundId] });
-
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useArenaWrite();
+  const writeAsync = (roundId: bigint) => sendAndWait("advanceRound", [roundId]);
+  return { writeAsync, ...rest };
 }
 
 export function useSelectWinner() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (roundId: bigint, winner: `0x${string}`) =>
-    writeContract({ ...arenaConfig, functionName: "selectWinner", args: [roundId, winner] });
-
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useArenaWrite();
+  const writeAsync = (roundId: bigint, winner: `0x${string}`) => sendAndWait("selectWinner", [roundId, winner]);
+  return { writeAsync, ...rest };
 }
 
 // === User ===
 
 export function useProposeTopic() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (roundId: bigint, title: string, description: string) =>
-    writeContract({ ...arenaConfig, functionName: "proposeTopic", args: [roundId, title, description] });
-
-  return { write, hash, receipt, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useArenaWrite();
+  const writeAsync = (roundId: bigint, title: string, description: string) =>
+    sendAndWait("proposeTopic", [roundId, title, description]);
+  return { writeAsync, ...rest };
 }
 
 export function useVoteForTopic() {
-  const { writeContract, writeContractAsync, data: hash, isPending, error } = useWriteContract();
-  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (topicId: bigint) =>
-    writeContract({ ...arenaConfig, functionName: "voteForTopic", args: [topicId] });
-
-  const writeAsync = (topicId: bigint) =>
-    writeContractAsync({ ...arenaConfig, functionName: "voteForTopic", args: [topicId] });
-
-  return { write, writeAsync, hash, receipt, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useArenaWrite();
+  const writeAsync = (topicId: bigint) => sendAndWait("voteForTopic", [topicId]);
+  return { writeAsync, ...rest };
 }
 
 export function useSubmitEntry() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (roundId: bigint, repoUrl: string, description: string) =>
-    writeContract({ ...arenaConfig, functionName: "submitEntry", args: [roundId, repoUrl, description] });
-
-  return { write, hash, receipt, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useArenaWrite();
+  const writeAsync = (roundId: bigint, repoUrl: string, description: string) =>
+    sendAndWait("submitEntry", [roundId, repoUrl, description]);
+  return { writeAsync, ...rest };
 }
 
 // === Read ===
 
-export function useGetRound(roundId: bigint) {
-  return useReadContract({
-    ...arenaConfig,
-    functionName: "rounds",
-    args: [roundId],
-  });
-}
-
-export function useGetRoundTopics(roundId: bigint) {
-  return useReadContract({
-    ...arenaConfig,
-    functionName: "getRoundTopics",
-    args: [roundId],
-  });
-}
-
-export function useGetRoundEntries(roundId: bigint) {
-  return useReadContract({
-    ...arenaConfig,
-    functionName: "getRoundEntries",
-    args: [roundId],
-  });
-}
-
 export function useHasVoted(roundId: bigint) {
   const { address } = useAccount();
-
   return useReadContract({
     ...arenaConfig,
     functionName: "hasVoted",

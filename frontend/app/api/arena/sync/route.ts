@@ -42,10 +42,12 @@ export async function POST(req: NextRequest) {
           .eq("id", roundId)
           .single();
         if (roundErr) throw roundErr;
+
+        let onChainSelectedTopicId: number | null = null;
         if (roundRow.on_chain_round_id != null) {
           const onChainRound = await getOnChainRound(BigInt(roundRow.on_chain_round_id));
-          // status enum: 0=Proposing, 1=Voting, 2=Building(active), 3=Judging(active), 4=Completed
-          const statusMap: Record<number, string> = { 0: "proposing", 1: "voting", 2: "active", 3: "active", 4: "completed" };
+          // status enum: 0=Proposing, 1=Voting, 2=Building(active), 3=Judging, 4=Completed
+          const statusMap: Record<number, string> = { 0: "proposing", 1: "voting", 2: "active", 3: "judging", 4: "completed" };
           const onChainStatus = statusMap[Number(onChainRound[3])] ?? "unknown";
           if (onChainStatus !== newStatus) {
             return NextResponse.json(
@@ -53,10 +55,29 @@ export async function POST(req: NextRequest) {
               { status: 403 },
             );
           }
+          // Read selectedTopicId when advancing to active (Voting → Building)
+          const rawSelectedTopicId = Number(onChainRound[4]);
+          if (rawSelectedTopicId > 0) {
+            onChainSelectedTopicId = rawSelectedTopicId;
+          }
         }
+
+        // If on-chain has a selected topic, find the matching DB topic
+        const updatePayload: Record<string, unknown> = { status: newStatus };
+        if (onChainSelectedTopicId != null) {
+          const { data: topicRow } = await supabase
+            .from("topics")
+            .select("id")
+            .eq("on_chain_topic_id", onChainSelectedTopicId)
+            .single();
+          if (topicRow) {
+            updatePayload.selected_topic_id = topicRow.id;
+          }
+        }
+
         const { data, error } = await supabase
           .from("rounds")
-          .update({ status: newStatus })
+          .update(updatePayload)
           .eq("id", roundId)
           .select()
           .single();
@@ -107,7 +128,8 @@ export async function POST(req: NextRequest) {
           .single();
         if (topicErr) throw topicErr;
 
-        // On-chain verification: check hasVoted
+        // On-chain verification: check hasVoted + read totalVotes
+        let onChainTotalVotes: bigint | null = null;
         if (topicRow.on_chain_topic_id != null) {
           const onChainTopic = await getOnChainTopic(BigInt(topicRow.on_chain_topic_id));
           const onChainRoundId = onChainTopic[0] as bigint;
@@ -118,15 +140,27 @@ export async function POST(req: NextRequest) {
               { status: 403 },
             );
           }
+          onChainTotalVotes = onChainTopic[4] as bigint;
         }
 
-        // Resolve user (validates address exists) and increment votes
+        // Resolve user (validates address exists) and sync votes
         await resolveUserId(address);
-        const { error: rpcError } = await supabase.rpc("increment_votes", {
-          topic_id: topicId,
-          weight: 1,
-        });
-        if (rpcError) throw rpcError;
+        if (onChainTotalVotes != null) {
+          // Sync DB total_votes to match on-chain (convert from 18 decimals)
+          const totalVotes = Number(onChainTotalVotes / 10n ** 18n);
+          const { error: updateErr } = await supabase
+            .from("topics")
+            .update({ total_votes: totalVotes })
+            .eq("id", topicId);
+          if (updateErr) throw updateErr;
+        } else {
+          // Fallback: no on-chain data, increment by 1
+          const { error: rpcError } = await supabase.rpc("increment_votes", {
+            topic_id: topicId,
+            weight: 1,
+          });
+          if (rpcError) throw rpcError;
+        }
 
         const { data, error } = await supabase
           .from("topics")

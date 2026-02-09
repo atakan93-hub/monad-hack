@@ -10,17 +10,18 @@ interface TopicVoteButtonProps {
   disabled?: boolean;
   isPending?: boolean;
   isConfirming?: boolean;
+  isSyncing?: boolean;
 }
 
-export function TopicVoteButton({ topicId, currentVotes, onVote, disabled, isPending, isConfirming }: TopicVoteButtonProps) {
-  const loading = isPending || isConfirming;
+export function TopicVoteButton({ topicId, currentVotes, onVote, disabled, isPending, isConfirming, isSyncing }: TopicVoteButtonProps) {
+  const loading = isPending || isConfirming || isSyncing;
   return (
     <div className="flex items-center gap-3">
       <Button
         size="sm"
         variant="outline"
-        className="border-accent/30 text-accent hover:bg-accent/10 hover:shadow-[0_0_12px_rgba(6,182,212,0.2)]
-                   transition-all duration-300"
+        className={`border-accent/30 text-accent hover:bg-accent/10 hover:shadow-[0_0_12px_rgba(6,182,212,0.2)]
+                   transition-all duration-300 ${disabled && !loading ? "opacity-30 grayscale" : ""}`}
         disabled={disabled || loading}
         onClick={(e) => {
           e.stopPropagation();
@@ -28,7 +29,7 @@ export function TopicVoteButton({ topicId, currentVotes, onVote, disabled, isPen
         }}
       >
         {loading ? (
-          <><Loader2 className="w-4 h-4 mr-1 animate-spin" />{isPending ? "Sign..." : "Confirming..."}</>
+          <><Loader2 className="w-4 h-4 mr-1 animate-spin" />{isPending ? "Sign..." : isConfirming ? "Confirming..." : "Syncing..."}</>
         ) : (
           <><Vote className="w-4 h-4 mr-1" />Vote</>
         )}
