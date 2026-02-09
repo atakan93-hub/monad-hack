@@ -61,10 +61,16 @@ export function ProfileDropdown() {
             {!connected ? (
               <button
                 onClick={openConnectModal}
-                className="px-4 py-2 rounded-lg text-sm font-medium
-                           bg-primary text-primary-foreground
-                           hover:bg-primary/90 transition-colors"
+                className="relative px-5 py-2 text-sm font-medium text-cyan-400
+                           border border-cyan-500/40 bg-cyan-500/5
+                           hover:bg-cyan-500/10 hover:border-cyan-500/60
+                           hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]
+                           transition-all duration-300"
               >
+                <span className="absolute -top-px -left-px w-2 h-2 border-t border-l border-cyan-400" />
+                <span className="absolute -top-px -right-px w-2 h-2 border-t border-r border-cyan-400" />
+                <span className="absolute -bottom-px -left-px w-2 h-2 border-b border-l border-cyan-400" />
+                <span className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-cyan-400" />
                 Connect Wallet
               </button>
             ) : (
