@@ -156,7 +156,8 @@ export default function MarketPage() {
                 <select
                   value={formCategory}
                   onChange={(e) => setFormCategory(e.target.value as RequestCategory)}
-                  className="w-full bg-background border border-input px-3 py-2 text-sm"
+                  className="w-full bg-background border border-input px-3 py-2 text-sm rounded-md
+                           transition-all duration-200 focus:border-cyan-500/40 focus:shadow-[0_0_8px_rgba(6,182,212,0.15)] focus:outline-none"
                 >
                   <option value="smart-contract">Smart Contract</option>
                   <option value="frontend">Frontend</option>
