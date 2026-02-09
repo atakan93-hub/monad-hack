@@ -7,6 +7,7 @@ import { useUser } from "@/lib/hooks/useUser";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatForge } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CyberCard } from "@/components/ui/CyberCard";
 import { ProposalForm } from "@/components/features/market/ProposalForm";
@@ -207,7 +208,7 @@ export default function RequestDetailPage() {
             <span>
               Budget:{" "}
               <span className="text-primary font-semibold">
-                {request.budget.toLocaleString()} FORGE
+                {formatForge(request.budget)} FORGE
               </span>
             </span>
             <span>Deadline: {daysLeft > 0 ? `${daysLeft} days left` : "Ended"}</span>
@@ -248,7 +249,7 @@ export default function RequestDetailPage() {
                       <p className="text-xs text-muted-foreground">
                         {prop.estimatedDays} days &middot;{" "}
                         <span className="text-primary font-medium">
-                          {prop.price.toLocaleString()} FORGE
+                          {formatForge(prop.price)} FORGE
                         </span>
                       </p>
                     </div>

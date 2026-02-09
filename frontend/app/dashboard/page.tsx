@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ClipboardList, Flame, Mail, Coins, Wallet } from "lucide-react";
 import { StatCard } from "@/components/features/common/StatCard";
+import { formatForge } from "@/lib/utils";
 import { CyberCard } from "@/components/ui/CyberCard";
 import {
   getDashboardStats,
@@ -97,7 +98,7 @@ export default function DashboardPage() {
         <StatCard label="Proposals Received" value={stats.totalProposals} icon={<Mail className="w-5 h-5" />} />
         <StatCard
           label="Total Spent"
-          value={`${stats.totalSpent.toLocaleString()} FORGE`}
+          value={`${formatForge(stats.totalSpent)} FORGE`}
           icon={<Coins className="w-5 h-5" />}
         />
       </div>
@@ -118,7 +119,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="font-medium text-sm">{req.title}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {req.budget.toLocaleString()} FORGE &middot;{" "}
+                          {formatForge(req.budget)} FORGE &middot;{" "}
                           {req.proposals.length} proposals
                         </p>
                       </div>
@@ -165,7 +166,7 @@ export default function DashboardPage() {
                           <p className="text-xs text-muted-foreground">
                             {prop.requestTitle} &middot;{" "}
                             <span className="text-primary">
-                              {prop.price.toLocaleString()} FORGE
+                              {formatForge(prop.price)} FORGE
                             </span>
                           </p>
                         </div>

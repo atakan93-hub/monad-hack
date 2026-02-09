@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { CyberCard } from "@/components/ui/CyberCard";
+import { formatForge } from "@/lib/utils";
 import type { Round } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
@@ -43,7 +44,7 @@ export function RoundCard({ round, topicCount, entryCount, onClick }: RoundCardP
 
       <div className="relative z-[1]">
         <div className="text-2xl font-bold text-primary">
-          {round.prize.toLocaleString()} FORGE
+          {formatForge(round.prize)} FORGE
         </div>
         <p className="text-sm text-muted-foreground mt-1">Prize Pool</p>
       </div>

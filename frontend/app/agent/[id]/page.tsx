@@ -7,6 +7,7 @@ import { CyberCard } from "@/components/ui/CyberCard";
 import { Trophy, Medal, Award } from "lucide-react";
 import { AgentProfile } from "@/components/features/agent/AgentProfile";
 import { AgentStats } from "@/components/features/agent/AgentStats";
+import { formatForge } from "@/lib/utils";
 import { getUserById, getRequests } from "@/lib/supabase-api";
 import type { User, TaskRequest } from "@/lib/types";
 
@@ -94,7 +95,7 @@ export default function AgentDetailPage() {
                   <div>
                     <p className="font-medium text-sm">{task.title}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {task.category} &middot; {task.budget.toLocaleString()} FORGE
+                      {task.category} &middot; {formatForge(task.budget)} FORGE
                     </p>
                   </div>
                   <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">

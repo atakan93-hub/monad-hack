@@ -28,6 +28,7 @@ import { useForgeBalance } from "@/lib/hooks/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import { formatUnits, decodeEventLog } from "viem";
 import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
+import { formatForge } from "@/lib/utils";
 import type { Round, Topic, ArenaEntry, RoundStatus } from "@/lib/types";
 
 const isOnChain = CONTRACT_ADDRESSES.ARENA !== "0x0000000000000000000000000000000000000000";
@@ -380,7 +381,7 @@ export default function ArenaPage() {
                     Round #{selectedRound.roundNumber}
                   </span>
                   <span className="text-primary font-semibold ml-auto">
-                    {selectedRound.prize.toLocaleString()} FORGE
+                    {formatForge(selectedRound.prize)} FORGE
                   </span>
                 </div>
                 <DialogTitle className="font-heading text-xl">
@@ -430,7 +431,7 @@ export default function ArenaPage() {
                       <div className="relative z-[1] flex items-center gap-3 text-sm">
                         <span className="text-muted-foreground">Your voting power</span>
                         <span className="font-semibold text-primary">
-                          {votingPower.toLocaleString()} FORGE
+                          {formatForge(votingPower)} FORGE
                         </span>
                         {alreadyVoted && (
                           <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30 ml-auto">

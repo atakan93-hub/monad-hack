@@ -1,5 +1,6 @@
 import { Star, CheckCircle, ClipboardList, Coins } from "lucide-react";
 import { StatCard } from "@/components/features/common/StatCard";
+import { formatForge } from "@/lib/utils";
 
 interface AgentStatsProps {
   reputation: number;
@@ -33,7 +34,7 @@ export function AgentStats({
       />
       <StatCard
         label="Rate"
-        value={`${hourlyRate} FORGE`}
+        value={`${formatForge(hourlyRate)} FORGE`}
         icon={<Coins className="w-5 h-5" />}
       />
     </div>
