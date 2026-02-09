@@ -1,6 +1,7 @@
 "use client";
 
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi";
+import type { TransactionReceipt } from "viem";
 import { EscrowAbi } from "@/lib/contracts/EscrowAbi";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 
@@ -9,44 +10,45 @@ const escrowConfig = {
   abi: EscrowAbi,
 } as const;
 
+/** Shared base for all escrow write hooks: sign → wait → assert success */
+function useEscrowWrite() {
+  const { writeContractAsync, data: hash, isPending, error } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const publicClient = usePublicClient();
+
+  const sendAndWait = async (functionName: string, args: unknown[]) => {
+    const h = await writeContractAsync({ ...escrowConfig, functionName, args } as Parameters<typeof writeContractAsync>[0]);
+    const receipt = await publicClient!.waitForTransactionReceipt({ hash: h });
+    if (receipt.status === "reverted") throw new Error(`Transaction reverted: ${functionName}`);
+    return receipt as TransactionReceipt;
+  };
+
+  return { sendAndWait, hash, isPending, isConfirming, isSuccess, error };
+}
+
 export function useCreateDeal() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { data: receipt, isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (agent: `0x${string}`, amount: bigint, deadline: bigint) =>
-    writeContract({ ...escrowConfig, functionName: "createDeal", args: [agent, amount, deadline] });
-
-  return { write, hash, receipt, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useEscrowWrite();
+  const writeAsync = (agent: `0x${string}`, amount: bigint, deadline: bigint) =>
+    sendAndWait("createDeal", [agent, amount, deadline]);
+  return { writeAsync, ...rest };
 }
 
 export function useFundDeal() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (dealId: bigint) =>
-    writeContract({ ...escrowConfig, functionName: "fundDeal", args: [dealId] });
-
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useEscrowWrite();
+  const writeAsync = (dealId: bigint) => sendAndWait("fundDeal", [dealId]);
+  return { writeAsync, ...rest };
 }
 
 export function useCompleteDeal() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (dealId: bigint) =>
-    writeContract({ ...escrowConfig, functionName: "completeDeal", args: [dealId] });
-
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useEscrowWrite();
+  const writeAsync = (dealId: bigint) => sendAndWait("completeDeal", [dealId]);
+  return { writeAsync, ...rest };
 }
 
 export function useReleaseFunds() {
-  const { writeContract, data: hash, isPending, error } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  const write = (dealId: bigint) =>
-    writeContract({ ...escrowConfig, functionName: "releaseFunds", args: [dealId] });
-
-  return { write, hash, isPending, isConfirming, isSuccess, error };
+  const { sendAndWait, ...rest } = useEscrowWrite();
+  const writeAsync = (dealId: bigint) => sendAndWait("releaseFunds", [dealId]);
+  return { writeAsync, ...rest };
 }
 
 export function useGetDeal(dealId: bigint) {

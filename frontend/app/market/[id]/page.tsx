@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { useAccount } from "wagmi";
 import { useUser } from "@/lib/hooks/useUser";
@@ -51,9 +51,10 @@ export default function RequestDetailPage() {
   const { isConnected } = useAccount();
   const { address, user } = useUser();
   const createDeal = useCreateDeal();
-  const pendingAccept = useRef<{ requestId: string; userId: string; amount: number } | null>(null);
   const [request, setRequest] = useState<TaskRequest | null>(null);
   const [proposals, setProposals] = useState<ProposalWithUser[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -98,74 +99,72 @@ export default function RequestDetailPage() {
     setProposals(withUsers);
   };
 
+  const reloadProposals = async () => {
+    const props = await getProposalsByRequest(id);
+    const withUsers = await Promise.all(
+      props.map(async (p) => ({ ...p, proposer: await getUserById(p.userId) }))
+    );
+    setProposals(withUsers);
+  };
+
   const handleAccept = async (proposalId: string) => {
     const prop = proposals.find((p) => p.id === proposalId);
-    if (isOnChain && isConnected && prop?.proposer) {
-      pendingAccept.current = { requestId: id, userId: prop.userId, amount: prop.price };
-      const agentAddr = prop.proposer.address as `0x${string}`;
-      const amount = BigInt(prop.price) * BigInt(10 ** 18);
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + prop.estimatedDays * 86400);
-      createDeal.write(agentAddr, amount, deadline);
-    } else {
-      await fetch("/api/market/proposals", {
+    if (!prop) return;
+
+    setSyncError(null);
+    setIsSyncing(true);
+    try {
+      let onChainDealId: string | undefined;
+
+      if (isOnChain && isConnected && prop.proposer) {
+        const agentAddr = prop.proposer.address as `0x${string}`;
+        const amount = BigInt(prop.price) * BigInt(10 ** 18);
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + prop.estimatedDays * 86400);
+        const receipt = await createDeal.writeAsync(agentAddr, amount, deadline);
+
+        for (const log of receipt.logs) {
+          try {
+            const decoded = decodeEventLog({ abi: EscrowAbi, data: log.data, topics: log.topics });
+            if (decoded.eventName === "DealCreated") {
+              onChainDealId = String((decoded.args as { dealId: bigint }).dealId);
+              break;
+            }
+          } catch { /* not our event */ }
+        }
+      }
+
+      // Accept proposal (also sets request to in_progress)
+      const acceptRes = await fetch("/api/market/proposals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "updateStatus", proposalId, status: "accepted" }),
       });
-      if (prop) {
-        await fetch("/api/escrow/sync", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "createEscrow", address, requestId: id, userId: prop.userId, amount: prop.price }),
-        });
+      if (!acceptRes.ok) {
+        const err = await acceptRes.json().catch(() => ({}));
+        throw new Error(err.error ?? `Accept failed (${acceptRes.status})`);
       }
-      const props = await getProposalsByRequest(id);
-      const withUsers = await Promise.all(
-        props.map(async (p) => ({ ...p, proposer: await getUserById(p.userId) }))
-      );
-      setProposals(withUsers);
-    }
-  };
 
-  // Sync escrow to DB after on-chain deal creation
-  useEffect(() => {
-    if (!createDeal.isSuccess || !createDeal.receipt || !pendingAccept.current || !address) return;
-    const { requestId, userId, amount } = pendingAccept.current;
-    pendingAccept.current = null;
-
-    let onChainDealId: string | undefined;
-    for (const log of createDeal.receipt.logs) {
-      try {
-        const decoded = decodeEventLog({ abi: EscrowAbi, data: log.data, topics: log.topics });
-        if (decoded.eventName === "DealCreated") {
-          onChainDealId = String((decoded.args as { dealId: bigint }).dealId);
-          break;
-        }
-      } catch { /* not our event */ }
-    }
-
-    (async () => {
-      const prop = proposals.find((p) => p.userId === userId);
-      if (prop) {
-        await fetch("/api/market/proposals", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "updateStatus", proposalId: prop.id, status: "accepted" }),
-        });
-      }
-      await fetch("/api/escrow/sync", {
+      // Create escrow record
+      const syncRes = await fetch("/api/escrow/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "createEscrow", address, requestId, userId, amount, onChainDealId }),
+        body: JSON.stringify({ action: "createEscrow", address, requestId: id, userId: prop.userId, amount: prop.price, onChainDealId }),
       });
-      const props = await getProposalsByRequest(id);
-      const withUsers = await Promise.all(
-        props.map(async (p) => ({ ...p, proposer: await getUserById(p.userId) }))
-      );
-      setProposals(withUsers);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [createDeal.isSuccess]);
+      if (!syncRes.ok) {
+        const err = await syncRes.json().catch(() => ({}));
+        throw new Error(err.error ?? `Escrow sync failed (${syncRes.status})`);
+      }
+
+      // Reload data
+      const req = await getRequestById(id);
+      setRequest(req);
+      await reloadProposals();
+    } catch (err) {
+      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Transaction failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   if (!request) {
     return (
@@ -260,9 +259,9 @@ export default function RequestDetailPage() {
                       <Button
                         size="sm"
                         onClick={() => handleAccept(prop.id)}
-                        disabled={createDeal.isPending || createDeal.isConfirming}
+                        disabled={isSyncing}
                       >
-                        {createDeal.isPending ? "Sign tx..." : createDeal.isConfirming ? "Confirming..." : "Accept"}
+                        {isSyncing ? "Processing..." : "Accept"}
                       </Button>
                     )}
                     {prop.status === "accepted" && (
@@ -283,6 +282,10 @@ export default function RequestDetailPage() {
             </div>
           ))}
         </div>
+
+        {syncError && (
+          <p className="text-sm text-destructive mt-3">{syncError}</p>
+        )}
       </div>
 
       {/* Submit Proposal Form */}
