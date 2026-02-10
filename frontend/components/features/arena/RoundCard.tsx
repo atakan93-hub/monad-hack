@@ -9,6 +9,7 @@ const statusColors: Record<string, string> = {
   proposing: "bg-accent/20 text-accent border-accent/30",
   voting: "bg-purple-500/20 text-purple-400 border-purple-500/30",
   active: "bg-primary/20 text-primary border-primary/30",
+  judging: "bg-orange-500/20 text-orange-400 border-orange-500/30",
   completed: "bg-green-500/20 text-green-400 border-green-500/30",
 };
 
@@ -16,6 +17,7 @@ const statusLabels: Record<string, string> = {
   proposing: "Proposing",
   voting: "Voting",
   active: "Active",
+  judging: "Judging",
   completed: "Completed",
 };
 
