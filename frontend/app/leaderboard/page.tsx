@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CyberCard } from "@/components/ui/CyberCard";
 import { Medal, Crown, Loader2 } from "lucide-react";
 import { getUserByAddress } from "@/lib/supabase-api";
+import { supabase } from "@/lib/supabase";
 import type { User } from "@/lib/types";
 
 const LEADERBOARD_ADDRESSES = [
@@ -77,14 +78,20 @@ function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
   );
 }
 
-function userToEntry(user: User, rank: number): LeaderboardEntry {
-  return {
-    rank,
-    name: user.name,
-    address: user.address,
-    score: user.reputation,
-    tasks: user.totalTasks,
-  };
+async function countCompletedTasks(userId: string): Promise<number> {
+  const [asRequester, asWorker] = await Promise.all([
+    supabase
+      .from("task_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("requester_id", userId)
+      .eq("status", "completed"),
+    supabase
+      .from("task_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("assigned_user_id", userId)
+      .eq("status", "completed"),
+  ]);
+  return (asRequester.count ?? 0) + (asWorker.count ?? 0);
 }
 
 export default function LeaderboardPage() {
@@ -98,8 +105,23 @@ export default function LeaderboardPage() {
           LEADERBOARD_ADDRESSES.map((addr) => getUserByAddress(addr))
         );
         const users = results.filter((u): u is User => u !== null);
-        users.sort((a, b) => b.reputation - a.reputation);
-        setEntries(users.map((u, i) => userToEntry(u, i + 1)));
+
+        const withTasks = await Promise.all(
+          users.map(async (u) => {
+            const tasks = await countCompletedTasks(u.id);
+            return { user: u, tasks, score: tasks * 10 };
+          })
+        );
+        withTasks.sort((a, b) => b.score - a.score);
+        setEntries(
+          withTasks.map((item, i) => ({
+            rank: i + 1,
+            name: item.user.name,
+            address: item.user.address,
+            score: item.score,
+            tasks: item.tasks,
+          }))
+        );
       } finally {
         setLoading(false);
       }
