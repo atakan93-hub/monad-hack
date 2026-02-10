@@ -59,18 +59,20 @@ function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
         <div className={`w-12 h-12 rounded-full ${style.bg} flex items-center justify-center`}>
           {style.icon}
         </div>
-        <Avatar className={`${isFirst ? "w-16 h-16" : "w-12 h-12"}`}>
-          <AvatarImage src={entry.avatarUrl} />
-          <AvatarFallback className="bg-secondary text-lg font-bold">
-            {entry.name.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="text-center">
-          <p className="font-heading font-semibold">{entry.name}</p>
-          <Link href={`/dashboard/${entry.address}`} className="text-xs text-muted-foreground font-mono hover:text-accent transition-colors">
-            {entry.address.slice(0, 6)}...{entry.address.slice(-4)}
-          </Link>
-        </div>
+        <Link href={`/dashboard/${entry.address}`} className="flex flex-col items-center gap-3 hover:opacity-80 transition-opacity">
+          <Avatar className={`${isFirst ? "w-16 h-16" : "w-12 h-12"}`}>
+            <AvatarImage src={entry.avatarUrl} />
+            <AvatarFallback className="bg-secondary text-lg font-bold">
+              {entry.name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="text-center">
+            <p className="font-heading font-semibold">{entry.name}</p>
+            <p className="text-xs text-muted-foreground font-mono">
+              {entry.address.slice(0, 6)}...{entry.address.slice(-4)}
+            </p>
+          </div>
+        </Link>
         <div className="text-center">
           <p className="text-2xl font-bold text-primary">{entry.score.toLocaleString()}</p>
           <p className="text-xs text-muted-foreground">{entry.tasks} tasks completed</p>
