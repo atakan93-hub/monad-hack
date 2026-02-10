@@ -3,17 +3,22 @@ import { ArenaAbi } from "./contracts/ArenaAbi";
 import { EscrowAbi } from "./contracts/EscrowAbi";
 import { CONTRACT_ADDRESSES } from "./contracts/addresses";
 
-const MONAD_CHAIN_ID = 10143;
+const MONAD_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
+const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL;
 
-const monadTestnet = defineChain({
+if (!MONAD_CHAIN_ID || !rpcUrl) {
+  throw new Error("Missing env: NEXT_PUBLIC_CHAIN_ID, NEXT_PUBLIC_RPC_URL");
+}
+
+const monadChain = defineChain({
   id: MONAD_CHAIN_ID,
-  name: "Monad Testnet",
+  name: "Monad",
   nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
-  rpcUrls: { default: { http: ["https://testnet-rpc.monad.xyz"] } },
+  rpcUrls: { default: { http: [rpcUrl] } },
 });
 
 const client = createPublicClient({
-  chain: monadTestnet,
+  chain: monadChain,
   transport: http(),
 });
 

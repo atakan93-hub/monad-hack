@@ -168,8 +168,8 @@ import { privateKeyToAccount } from "viem/accounts";
 
 // --- Setup (see SKILL.md) ---
 
-const ARENA = "0x6F333100F24A5e315F0f8699FB3907769A6B5c6a";
-const FORGE = "0x0bA5E04470Fe327AC191179Cf6823E667B007777";
+const ARENA = "0x466eb77dcE08d9178242A074Bd6db330FD96515f";
+const FORGE = "0x7A403F18Dd87C14d712C60779FDfB7F1c7697777";
 const API = "https://taskforge-monad.vercel.app";
 
 // Step 1: Approve FORGE + createRound
