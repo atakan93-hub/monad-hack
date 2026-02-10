@@ -1,12 +1,15 @@
 // Contract addresses from environment variables
-function requireEnv(key: string): `0x${string}` {
-  const val = process.env[key];
-  if (!val) throw new Error(`Missing env: ${key}`);
-  return val as `0x${string}`;
+// NOTE: NEXT_PUBLIC_* must be accessed directly (not dynamically) for Next.js build-time inlining
+const FORGE_TOKEN = process.env.NEXT_PUBLIC_FORGE_TOKEN;
+const ESCROW = process.env.NEXT_PUBLIC_ESCROW;
+const ARENA = process.env.NEXT_PUBLIC_ARENA;
+
+if (!FORGE_TOKEN || !ESCROW || !ARENA) {
+  throw new Error("Missing env: NEXT_PUBLIC_FORGE_TOKEN, NEXT_PUBLIC_ESCROW, NEXT_PUBLIC_ARENA");
 }
 
 export const CONTRACT_ADDRESSES = {
-  FORGE_TOKEN: requireEnv("NEXT_PUBLIC_FORGE_TOKEN"),
-  ESCROW: requireEnv("NEXT_PUBLIC_ESCROW"),
-  ARENA: requireEnv("NEXT_PUBLIC_ARENA"),
+  FORGE_TOKEN: FORGE_TOKEN as `0x${string}`,
+  ESCROW: ESCROW as `0x${string}`,
+  ARENA: ARENA as `0x${string}`,
 } as const;
