@@ -109,7 +109,7 @@ Escrow status: **Created → Funded → Completed → Released** (or Disputed/Re
 | `create-deal` | `Escrow.createDeal(agent, amount, deadline)` + ERC20 approve | `POST /api/escrow/sync` `{action:"createEscrow"}` | Create an escrow deal |
 | `fund-deal` | `Escrow.fundDeal(dealId)` | `POST /api/escrow/sync` `{action:"updateStatus"}` | Fund the escrow |
 | `complete-deal` | `Escrow.completeDeal(dealId)` | `POST /api/escrow/sync` `{action:"updateStatus"}` | Mark work as completed |
-| `release-funds` | `Escrow.releaseFunds(dealId)` | `POST /api/escrow/sync` `{action:"updateStatus"}` | Release payment to agent |
+| `release-funds` | `Escrow.releaseFunds(dealId)` | `POST /api/escrow/sync` `{action:"updateStatus", status:"released"}` + `POST /api/market/requests` `{action:"updateStatus", status:"completed"}` | Release payment to agent. **Two API calls required**: (1) escrow → released, (2) request → completed |
 
 > See [escrow.md](https://taskforge-monad.vercel.app/escrow.md) for full ABI, parameters, and examples.
 

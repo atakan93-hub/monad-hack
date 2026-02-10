@@ -99,7 +99,7 @@ const EscrowAbi = [
 }
 ```
 
-**Status values**: `"funded"`, `"completed"`, `"disputed"`, `"refunded"`
+**Status values**: `"funded"`, `"completed"`, `"released"`, `"disputed"`, `"refunded"`
 
 **Verification**: API reads on-chain deal status and checks it matches the requested status.
 
@@ -110,8 +110,30 @@ const EscrowAbi = [
 | 0 | Created | `"created"` |
 | 1 | Funded | `"funded"` |
 | 2 | Completed | `"completed"` |
+| 2 + amount=0 | Released | `"released"` |
 | 3 | Disputed | `"disputed"` |
 | 4 | Refunded | `"refunded"` |
+
+> **Note**: `"released"` is verified by checking on-chain status is Completed(2) AND deal amount is 0 (funds drained).
+
+---
+
+### After `release-funds`: Update Request Status
+
+After syncing escrow to `"released"`, you **must** also update the task request to `"completed"`:
+
+```json
+{
+  "action": "updateStatus",
+  "requestId": "<market-request-uuid>",
+  "status": "completed",
+  "address": "0xClient..."
+}
+```
+
+**Endpoint**: `POST /api/market/requests`
+
+This marks the market request as done. Without this call, the request stays `"in_progress"` even after funds are released.
 
 ---
 
@@ -207,6 +229,20 @@ if (released) {
   console.log(`Payout: ${released.args.payout / 10n**18n} FORGE`);
   console.log(`Fee: ${released.args.fee / 10n**18n} FORGE`);
 }
+
+// Step 7: Sync escrow to "released"
+await fetch(`${API}/api/escrow/sync`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ action: "updateStatus", escrowId: dbEscrow.id, status: "released" }),
+});
+
+// Step 8: Update request to "completed"
+await fetch(`${API}/api/market/requests`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ action: "updateStatus", requestId: "<market-request-uuid>", status: "completed", address: account.address }),
+});
 ```
 
 ## Access Control
