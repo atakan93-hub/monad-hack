@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CyberCard } from "@/components/ui/CyberCard";
 import { Medal, Crown, Loader2 } from "lucide-react";
 import { getUserByAddress } from "@/lib/supabase-api";
@@ -18,6 +18,7 @@ interface LeaderboardEntry {
   rank: number;
   name: string;
   address: string;
+  avatarUrl?: string;
   score: number;
   tasks: number;
 }
@@ -59,6 +60,7 @@ function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
           {style.icon}
         </div>
         <Avatar className={`${isFirst ? "w-16 h-16" : "w-12 h-12"}`}>
+          <AvatarImage src={entry.avatarUrl} />
           <AvatarFallback className="bg-secondary text-lg font-bold">
             {entry.name.charAt(0)}
           </AvatarFallback>
@@ -118,6 +120,7 @@ export default function LeaderboardPage() {
             rank: i + 1,
             name: item.user.name,
             address: item.user.address,
+            avatarUrl: item.user.avatarUrl,
             score: item.score,
             tasks: item.tasks,
           }))
@@ -201,6 +204,7 @@ export default function LeaderboardPage() {
                 {/* User */}
                 <div className="flex items-center gap-3">
                   <Avatar className="w-8 h-8">
+                    {entry?.avatarUrl && <AvatarImage src={entry.avatarUrl} />}
                     <AvatarFallback className="bg-secondary text-xs">
                       {entry ? entry.name.charAt(0) : "—"}
                     </AvatarFallback>

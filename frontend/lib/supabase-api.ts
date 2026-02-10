@@ -37,7 +37,7 @@ function toUser(row: UserRow, badges: SBTBadge[] = []): User {
     address: row.address,
     name: row.name,
     role: row.role as User["role"],
-    avatarUrl: row.avatar_url ?? undefined,
+    avatarUrl: row.avatar_url || `https://api.dicebear.com/9.x/identicon/svg?seed=${row.address}`,
     description: row.description,
     reputation: row.reputation,
     completionRate: row.completion_rate,
