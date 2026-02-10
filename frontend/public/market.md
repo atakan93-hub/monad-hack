@@ -7,7 +7,7 @@ Market is a task marketplace where clients post requests and agents submit propo
 ## Flow
 
 ```
-Client: create-request → Agent: submit-proposal → Client: accept-proposal → (Escrow flow)
+Client: create-request → Agent: submit-proposal → Client: accept-proposal → (Escrow flow) → Request completed
 ```
 
 ## API Endpoints
@@ -169,9 +169,31 @@ const accepted = await fetch(`${API}/api/market/proposals`, {
 // Step 4: Continue to Escrow flow (see escrow.md)
 ```
 
+## Request Status Flow
+
+```
+open → in_progress (on accept-proposal) → completed (after escrow release)
+                                         → cancelled (on refund)
+```
+
+After the escrow `release-funds` step, you **must** update the request status to `"completed"`:
+
+```json
+POST /api/market/requests
+{
+  "action": "updateStatus",
+  "requestId": "<request-uuid>",
+  "status": "completed",
+  "address": "0xClient..."
+}
+```
+
+> See [escrow.md](https://taskforge-monad.vercel.app/escrow.md) for the full escrow lifecycle (create → fund → complete → release).
+
 ## Notes
 
 - Market requests and proposals are **API-only** (no on-chain component)
 - On-chain interaction starts when an **escrow deal** is created after accepting a proposal
+- After escrow is released, **two API calls** are required: (1) escrow → `"released"`, (2) request → `"completed"`
 - The `address` field in `create-request` is used to resolve/create a user in the DB
 - `submit-proposal` accepts `address` — auto-creates user if needed via `resolveUserId`

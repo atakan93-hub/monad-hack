@@ -604,7 +604,7 @@ export async function getDashboardStats(userId: string): Promise<{
     .from("escrow_deals")
     .select("amount")
     .eq("requester_id", userId)
-    .eq("status", "completed");
+    .in("status", ["completed", "released"]);
   if (escrowError) throw escrowError;
 
   const totalSpent = (completedEscrows ?? []).reduce((sum, e) => sum + e.amount, 0);
