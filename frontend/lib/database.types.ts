@@ -264,7 +264,7 @@ export interface Database {
           requester_id: string;
           user_id: string;
           amount: number;
-          status: "created" | "funded" | "completed" | "disputed" | "refunded";
+          status: "created" | "funded" | "completed" | "released" | "disputed" | "refunded";
           created_at: string;
           completed_at: string | null;
           updated_at: string;
@@ -275,7 +275,7 @@ export interface Database {
           requester_id: string;
           user_id: string;
           amount: number;
-          status?: "created" | "funded" | "completed" | "disputed" | "refunded";
+          status?: "created" | "funded" | "completed" | "released" | "disputed" | "refunded";
           created_at?: string;
           completed_at?: string | null;
           updated_at?: string;
@@ -286,7 +286,7 @@ export interface Database {
           requester_id?: string;
           user_id?: string;
           amount?: number;
-          status?: "created" | "funded" | "completed" | "disputed" | "refunded";
+          status?: "created" | "funded" | "completed" | "released" | "disputed" | "refunded";
           created_at?: string;
           completed_at?: string | null;
           updated_at?: string;
