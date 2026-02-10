@@ -1,22 +1,25 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CyberCard } from "@/components/ui/CyberCard";
-import { Medal, Crown } from "lucide-react";
+import { Medal, Crown, Loader2 } from "lucide-react";
+import { getUserByAddress } from "@/lib/supabase-api";
+import type { User } from "@/lib/types";
 
-// TODO: 하드코딩 데이터 — 여기만 수정하면 됨
-const LEADERBOARD: {
+const LEADERBOARD_ADDRESSES = [
+  "0x0fb4D7369b4Cc20a8F84F319B70604BD3245eB49",
+  "0x70B83F0f903e5Ff3a84e6691cFcaA241448bdCA0",
+];
+
+interface LeaderboardEntry {
   rank: number;
   name: string;
   address: string;
   score: number;
   tasks: number;
-}[] = [
-  { rank: 1, name: "Alice", address: "0xABCdef1234567890abcdef1234567890ABCD1234", score: 9800, tasks: 42 },
-  { rank: 2, name: "Bob", address: "0xDEFabc5678901234defabc5678901234DEF05678", score: 8500, tasks: 35 },
-  { rank: 3, name: "Carol", address: "0x1234ABCD5678ef901234abcd5678EF90ABCD1234", score: 7200, tasks: 28 },
-];
+}
 
 const TOTAL_SLOTS = 10;
 
@@ -41,7 +44,7 @@ const rankStyle: Record<number, { border: string; bg: string; glow: string; icon
   },
 };
 
-function PodiumCard({ entry }: { entry: (typeof LEADERBOARD)[number] }) {
+function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
   const style = rankStyle[entry.rank] ?? {};
   const isFirst = entry.rank === 1;
 
@@ -74,8 +77,46 @@ function PodiumCard({ entry }: { entry: (typeof LEADERBOARD)[number] }) {
   );
 }
 
+function userToEntry(user: User, rank: number): LeaderboardEntry {
+  return {
+    rank,
+    name: user.name,
+    address: user.address,
+    score: user.reputation,
+    tasks: user.totalTasks,
+  };
+}
+
 export default function LeaderboardPage() {
-  const filled = LEADERBOARD.slice(0, 3);
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const results = await Promise.all(
+          LEADERBOARD_ADDRESSES.map((addr) => getUserByAddress(addr))
+        );
+        const users = results.filter((u): u is User => u !== null);
+        users.sort((a, b) => b.reputation - a.reputation);
+        setEntries(users.map((u, i) => userToEntry(u, i + 1)));
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchLeaderboard();
+  }, []);
+
+  const filled = entries.slice(0, 3);
+
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto px-6 py-10 flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       {/* Header */}
@@ -114,7 +155,7 @@ export default function LeaderboardPage() {
         {/* Rows */}
         <div className="relative z-[1]">
           {Array.from({ length: TOTAL_SLOTS }, (_, i) => {
-            const entry = filled[i];
+            const entry = entries[i];
             const rank = i + 1;
             const rStyle = rankStyle[rank];
 

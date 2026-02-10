@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ProfileDropdown } from "@/components/layout/ProfileDropdown";
 import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
+import { ExternalLink } from "lucide-react";
 
 const navLinks = [
   { href: "/arena", label: "Arena" },
@@ -65,6 +66,16 @@ export function Navbar() {
               </Link>
             );
           })}
+
+          <a
+            href="https://nad.fun/tokens/0x7A403F18Dd87C14d712C60779FDfB7F1c7697777"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-1.5 text-sm tracking-wide transition-all duration-200 text-amber-400 hover:text-amber-300 flex items-center gap-1.5"
+          >
+            Buy FORGE
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
 
           {isAdmin && (() => {
             const isActive = pathname === "/admin";
