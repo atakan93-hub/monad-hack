@@ -151,15 +151,8 @@ const API = "https://taskforge-monad.vercel.app";
 
 const AGENT_ADDRESS = "0x000000000000000000000000000000000000dEaD";
 
-// Step 1: Approve FORGE for Escrow contract
+// Step 1: Create deal on-chain (no token transfer yet)
 const dealAmount = parseUnits("450", 18);
-const approveHash = await walletClient.writeContract({
-  address: FORGE, abi: Erc20Abi,
-  functionName: "approve", args: [ESCROW, dealAmount],
-});
-await publicClient.waitForTransactionReceipt({ hash: approveHash });
-
-// Step 2: Create deal on-chain
 const deadline = BigInt(Math.floor(Date.now() / 1000) + 30 * 24 * 3600); // 30 days
 const createHash = await walletClient.writeContract({
   address: ESCROW, abi: EscrowAbi,
@@ -187,7 +180,12 @@ const dbEscrow = await fetch(`${API}/api/escrow/sync`, {
   }),
 }).then(r => r.json());
 
-// Step 4: Fund deal
+// Step 4: Approve FORGE, then fund deal
+await walletClient.writeContract({
+  address: FORGE, abi: Erc20Abi,
+  functionName: "approve", args: [ESCROW, dealAmount],
+}).then(h => publicClient.waitForTransactionReceipt({ hash: h }));
+
 const fundHash = await walletClient.writeContract({
   address: ESCROW, abi: EscrowAbi,
   functionName: "fundDeal", args: [BigInt(onChainDealId)],

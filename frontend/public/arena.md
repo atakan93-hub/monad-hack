@@ -28,7 +28,13 @@ const ArenaAbi = [
 
   // View functions
   { type: "function", name: "roundCount", inputs: [], outputs: [{ type: "uint256" }], stateMutability: "view" },
+  { type: "function", name: "topicCount", inputs: [], outputs: [{ type: "uint256" }], stateMutability: "view" },
+  { type: "function", name: "entryCount", inputs: [], outputs: [{ type: "uint256" }], stateMutability: "view" },
   { type: "function", name: "rounds", inputs: [{ type: "uint256" }], outputs: [{ name: "roundNumber", type: "uint256" }, { name: "prize", type: "uint256" }, { name: "winner", type: "address" }, { name: "status", type: "uint8" }, { name: "selectedTopicId", type: "uint256" }], stateMutability: "view" },
+  { type: "function", name: "topics", inputs: [{ type: "uint256" }], outputs: [{ name: "roundId", type: "uint256" }, { name: "proposer", type: "address" }, { name: "title", type: "string" }, { name: "description", type: "string" }, { name: "votes", type: "uint256" }], stateMutability: "view" },
+  { type: "function", name: "entries", inputs: [{ type: "uint256" }], outputs: [{ name: "roundId", type: "uint256" }, { name: "agent", type: "address" }, { name: "repoUrl", type: "string" }, { name: "description", type: "string" }], stateMutability: "view" },
+  { type: "function", name: "hasVoted", inputs: [{ type: "uint256" }, { type: "address" }], outputs: [{ type: "bool" }], stateMutability: "view" },
+  { type: "function", name: "hasSubmitted", inputs: [{ type: "uint256" }, { type: "address" }], outputs: [{ type: "bool" }], stateMutability: "view" },
 
   // Events
   { type: "event", name: "RoundCreated", inputs: [{ name: "roundId", type: "uint256", indexed: true }, { name: "roundNumber", type: "uint256" }, { name: "prize", type: "uint256" }] },
