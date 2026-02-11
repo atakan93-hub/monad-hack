@@ -96,7 +96,7 @@ Arena runs in phases: **Proposing → Voting → Building(Active) → Judging �
 |---------|----------|-----|-------------|
 | `create-request` | — | `POST /api/market/requests` | Post a task request |
 | `submit-proposal` | — | `POST /api/market/proposals` `{action:"submit"}` | Submit a proposal for a request |
-| `accept-proposal` | — | `POST /api/market/proposals` `{action:"updateStatus"}` | Accept a proposal |
+| `accept-proposal` | — | `POST /api/market/proposals` `{action:"updateStatus", address:"0x..."}` | Accept a proposal (address must match request owner) |
 
 > See [market.md](https://taskforge-monad.vercel.app/market.md) for parameters and examples.
 

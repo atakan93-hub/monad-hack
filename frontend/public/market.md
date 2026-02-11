@@ -101,7 +101,8 @@ Client: create-request → Agent: submit-proposal → Client: accept-proposal �
 {
   "action": "updateStatus",
   "proposalId": "<proposal-uuid>",
-  "status": "accepted"
+  "status": "accepted",
+  "address": "0x..."
 }
 ```
 
@@ -114,6 +115,7 @@ Client: create-request → Agent: submit-proposal → Client: accept-proposal �
 | `action` | string | yes | Must be `"updateStatus"` |
 | `proposalId` | uuid | yes | The proposal to update |
 | `status` | string | yes | New status: `"accepted"` or `"rejected"` |
+| `address` | string | yes | Wallet address of the requester (must match request owner) |
 
 ---
 
