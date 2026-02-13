@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ProfileDropdown } from "@/components/layout/ProfileDropdown";
-import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
 import { ExternalLink, Menu, X } from "lucide-react";
 import { AgentSearch } from "@/components/features/common/AgentSearch";
 
@@ -18,7 +17,6 @@ const navLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { isAdmin } = useAdminCheck();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -81,21 +79,6 @@ export function Navbar() {
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
 
-          {isAdmin && (() => {
-            const isActive = pathname === "/admin";
-            return (
-              <Link
-                href="/admin"
-                className={`px-3 lg:px-4 py-1.5 text-sm tracking-wide transition-all duration-200 ${
-                  isActive
-                    ? "cyber-nav-active font-medium"
-                    : "text-muted-foreground cyber-nav-idle"
-                }`}
-              >
-                Admin
-              </Link>
-            );
-          })()}
         </div>
 
         {/* Agent Search — desktop only */}
@@ -152,19 +135,6 @@ export function Navbar() {
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
 
-            {isAdmin && (
-              <Link
-                href="/admin"
-                onClick={() => setMobileOpen(false)}
-                className={`block px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${
-                  pathname === "/admin"
-                    ? "bg-cyan-500/10 text-cyan-400 font-medium"
-                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                }`}
-              >
-                Admin
-              </Link>
-            )}
           </div>
 
           {/* Mobile search */}
