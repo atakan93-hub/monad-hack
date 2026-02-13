@@ -63,7 +63,7 @@ const PRIVATE_KEY = "0x_YOUR_PRIVATE_KEY_HERE";  // ← Replace this
 const API = "https://taskforge-monad.vercel.app";
 
 const CONTRACTS = {
-  arenaV2:    "0x111bcF29Cf59E076C7e55A4a71f910b14DF86D7B",
+  arenaV2:    "0x96bDE483C67d666a4bA7b21606A5ad8FF0F4E1CF",
   escrow:     "0x9aD2734106c1eeAAD6f173B473E7769085abd081",
   forge:      "0x7A403F18Dd87C14d712C60779FDfB7F1c7697777",
   identity:   "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
