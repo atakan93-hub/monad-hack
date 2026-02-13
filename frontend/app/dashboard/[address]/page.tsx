@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/lib/hooks/useUser";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ClipboardList,
@@ -18,8 +17,12 @@ import {
 import { StatCard } from "@/components/features/common/StatCard";
 import { formatForge } from "@/lib/utils";
 import { CyberCard } from "@/components/ui/CyberCard";
-import { DirectDealModal } from "@/components/features/market/DirectDealModal";
 import { DirectDealCard } from "@/components/features/market/DirectDealCard";
+import { DirectDealButton } from "@/components/features/agent/DirectDealButton";
+import { AgentIdentityCard } from "@/components/features/agent/AgentIdentityCard";
+import { ReputationScore } from "@/components/features/agent/ReputationScore";
+import { FeedbackHistory } from "@/components/features/agent/FeedbackHistory";
+import { ValidationBadge } from "@/components/features/agent/ValidationBadge";
 import {
   getDashboardStats,
   getRequests,
@@ -42,6 +45,31 @@ interface ProposalWithUser extends Proposal {
   requestTitle?: string;
 }
 
+interface ReputationData {
+  onChain: boolean;
+  agentId: number | null;
+  reputation: number;
+  feedbackCount: number;
+  completionRate?: number;
+  totalTasks?: number;
+  summaryValue?: number;
+}
+
+interface IdentityData {
+  registered: boolean;
+  agentId: number | null;
+  balance?: number;
+}
+
+interface FeedbackEntry {
+  client: string;
+  feedbackIndex: number;
+  value: number;
+  tag1: string;
+  tag2: string;
+  isRevoked: boolean;
+}
+
 export default function UserDashboardPage() {
   const params = useParams();
   const profileAddress = params.address as string;
@@ -56,11 +84,11 @@ export default function UserDashboardPage() {
     totalSpent: 0,
   });
   const [activeRequests, setActiveRequests] = useState<TaskRequest[]>([]);
-  const [recentProposals, setRecentProposals] = useState<ProposalWithUser[]>(
-    [],
-  );
+  const [recentProposals, setRecentProposals] = useState<ProposalWithUser[]>([]);
   const [directDeals, setDirectDeals] = useState<DirectRequest[]>([]);
-  const [showDirectDeal, setShowDirectDeal] = useState(false);
+  const [identityData, setIdentityData] = useState<IdentityData | null>(null);
+  const [reputationData, setReputationData] = useState<ReputationData | null>(null);
+  const [feedbackData, setFeedbackData] = useState<FeedbackEntry[]>([]);
 
   const isOwnDashboard =
     currentUser?.address?.toLowerCase() === profileAddress?.toLowerCase();
@@ -72,6 +100,22 @@ export default function UserDashboardPage() {
       setDirectDeals(deals);
     } catch {
       /* ignore */
+    }
+  }, [profileAddress]);
+
+  const loadIdentityAndReputation = useCallback(async () => {
+    if (!profileAddress) return;
+    try {
+      const [identityRes, reputationRes, feedbackRes] = await Promise.all([
+        fetch(`/api/agents/${profileAddress}/identity`).then((r) => r.json()),
+        fetch(`/api/agents/${profileAddress}/reputation`).then((r) => r.json()),
+        fetch(`/api/agents/${profileAddress}/feedback`).then((r) => r.json()),
+      ]);
+      setIdentityData(identityRes);
+      setReputationData(reputationRes);
+      setFeedbackData(feedbackRes.feedback ?? []);
+    } catch {
+      /* ignore — APIs may not be ready */
     }
   }, [profileAddress]);
 
@@ -112,7 +156,8 @@ export default function UserDashboardPage() {
     }
     load();
     loadDirectDeals();
-  }, [profileAddress, loadDirectDeals]);
+    loadIdentityAndReputation();
+  }, [profileAddress, loadDirectDeals, loadIdentityAndReputation]);
 
   if (notFound) {
     return (
@@ -180,27 +225,32 @@ export default function UserDashboardPage() {
 
         {/* Direct Deal Button — shown on other users' dashboards */}
         {!isOwnDashboard && currentUser?.address && (
-          <Button
-            variant="outline"
-            className="border-accent/30 text-accent hover:bg-accent/10"
-            onClick={() => setShowDirectDeal(true)}
-          >
-            <Handshake className="w-4 h-4 mr-2" />
-            Request Direct Deal
-          </Button>
+          <DirectDealButton
+            agentAddress={profileUser.address}
+            agentName={profileUser.name}
+            clientAddress={currentUser.address}
+          />
         )}
       </div>
 
-      {/* Direct Deal Modal */}
-      {currentUser?.address && (
-        <DirectDealModal
-          open={showDirectDeal}
-          onOpenChange={setShowDirectDeal}
-          agentAddress={profileUser.address}
-          agentName={profileUser.name}
-          clientAddress={currentUser.address}
+      {/* ERC-8004 Identity & Reputation Section */}
+      <div className="grid lg:grid-cols-3 gap-4 mb-8">
+        <AgentIdentityCard
+          agentId={identityData?.agentId ?? null}
+          registered={identityData?.registered ?? false}
         />
-      )}
+        <ValidationBadge validated={identityData?.registered ?? false} />
+        {reputationData && (
+          <ReputationScore
+            onChain={reputationData.onChain}
+            reputation={reputationData.reputation ?? profileUser.reputation}
+            feedbackCount={reputationData.feedbackCount}
+            completionRate={reputationData.completionRate ?? profileUser.completionRate}
+            totalTasks={reputationData.totalTasks ?? profileUser.totalTasks}
+            summaryValue={reputationData.summaryValue}
+          />
+        )}
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -352,6 +402,13 @@ export default function UserDashboardPage() {
               )}
             </div>
           </CyberCard>
+        </div>
+      )}
+
+      {/* Feedback History */}
+      {feedbackData.length > 0 && (
+        <div className="mt-6">
+          <FeedbackHistory feedback={feedbackData} />
         </div>
       )}
     </div>
