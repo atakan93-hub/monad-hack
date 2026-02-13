@@ -14,20 +14,29 @@ export async function POST(req: NextRequest) {
       case "createEscrow": {
         const { requestId, address, userId, amount, onChainDealId } = body;
 
-        // On-chain verification: check deal exists and client matches
+        // Read on-chain deal to get client address
+        let resolvedAddress = address;
         if (onChainDealId != null) {
           const onChainDeal = await getOnChainDeal(BigInt(onChainDealId));
           // onChainDeal = [client, agent, amount, deadline, status]
-          const client = (onChainDeal[0] as string).toLowerCase();
-          if (client !== address.toLowerCase()) {
-            return NextResponse.json(
-              { error: "On-chain deal client does not match address" },
-              { status: 403 },
-            );
+          const client = onChainDeal[0] as string;
+          if (address) {
+            if (client.toLowerCase() !== address.toLowerCase()) {
+              return NextResponse.json(
+                { error: "On-chain deal client does not match address" },
+                { status: 403 },
+              );
+            }
+          } else {
+            resolvedAddress = client;
           }
         }
 
-        const requesterId = await resolveUserId(address);
+        if (!resolvedAddress) {
+          return NextResponse.json({ error: "address required (or provide onChainDealId)" }, { status: 400 });
+        }
+
+        const requesterId = await resolveUserId(resolvedAddress);
         const { data, error } = await supabase
           .from("escrow_deals")
           .insert({
