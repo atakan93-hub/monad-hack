@@ -97,6 +97,9 @@ export default function ArenaPage() {
   // Track DB sync loading
   const [isVoteSyncing, setIsVoteSyncing] = useState(false);
 
+  // Global action loading guard — prevents concurrent actions
+  const [isActionLoading, setIsActionLoading] = useState(false);
+
   // Topic proposal form
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
@@ -163,49 +166,54 @@ export default function ArenaPage() {
     const prizeNum = parseFloat(newPrize);
     if (isNaN(prizeNum) || prizeNum < 0) return;
 
-    if (isOnChain && isConnected) {
-      try {
-        const prize = parseUnits(newPrize || "0", 18);
-        if (prize > 0n) {
-          await approveAsync(CONTRACT_ADDRESSES.ARENA_V2, prize);
-        }
-        const receipt = await createRoundHook.writeAsync(prize);
+    setIsActionLoading(true);
+    try {
+      if (isOnChain && isConnected) {
+        try {
+          const prize = parseUnits(newPrize || "0", 18);
+          if (prize > 0n) {
+            await approveAsync(CONTRACT_ADDRESSES.ARENA_V2, prize);
+          }
+          const receipt = await createRoundHook.writeAsync(prize);
 
-        let onChainRoundId: number | undefined;
-        for (const log of receipt.logs) {
-          try {
-            const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
-            if (decoded.eventName === "RoundCreated") {
-              onChainRoundId = Number((decoded.args as { roundId: bigint }).roundId);
-              break;
-            }
-          } catch { /* not our event */ }
-        }
+          let onChainRoundId: number | undefined;
+          for (const log of receipt.logs) {
+            try {
+              const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+              if (decoded.eventName === "RoundCreated") {
+                onChainRoundId = Number((decoded.args as { roundId: bigint }).roundId);
+                break;
+              }
+            } catch { /* not our event */ }
+          }
 
-        if (onChainRoundId != null) {
-          await fetch("/api/arena/sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "createRound", onChainRoundId, creator: address }),
-          });
-        }
+          if (onChainRoundId != null) {
+            await fetch("/api/arena/sync", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "createRound", onChainRoundId, creator: address }),
+            });
+          }
 
+          setNewPrize("");
+          setShowCreateRound(false);
+          await loadRounds();
+          toast.success("Round created successfully!");
+        } catch (err) { toast.error(`Create round failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
+      } else {
+        // Off-chain fallback
+        await fetch("/api/arena/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "createRound", onChainRoundId: 0, creator: address }),
+        });
         setNewPrize("");
         setShowCreateRound(false);
         await loadRounds();
-        toast.success("Round created successfully!");
-      } catch (err) { toast.error(`Create round failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
-    } else {
-      // Off-chain fallback
-      await fetch("/api/arena/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "createRound", onChainRoundId: 0, creator: address }),
-      });
-      setNewPrize("");
-      setShowCreateRound(false);
-      await loadRounds();
-      toast.success("Round created!");
+        toast.success("Round created!");
+      }
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -219,70 +227,97 @@ export default function ArenaPage() {
     const newStatus = statusMap[selectedRound.status];
     if (!newStatus) return;
 
-    if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
-      try {
-        await advanceRoundHook.writeAsync(BigInt(selectedRound.onChainRoundId));
+    setIsActionLoading(true);
+    try {
+      if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
+        try {
+          await advanceRoundHook.writeAsync(BigInt(selectedRound.onChainRoundId));
+          await fetch("/api/arena/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "advanceRound", roundId: selectedRound.id, newStatus }),
+          });
+          await loadRounds();
+          // Refresh selected round
+          const updatedRounds = await getRounds();
+          const updated = updatedRounds.find((r) => r.id === selectedRound.id);
+          if (updated) {
+            setSelectedRound(updated);
+            const [t, e] = await Promise.all([
+              getTopicsByRound(updated.id),
+              getEntriesByRound(updated.id),
+            ]);
+            setTopics(t);
+            setEntries(e);
+          }
+          toast.success(`Round advanced to ${newStatus}!`);
+        } catch (err) { toast.error(`Advance failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
+      } else {
         await fetch("/api/arena/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "advanceRound", roundId: selectedRound.id, newStatus }),
         });
         await loadRounds();
-        // Refresh selected round
-        const updatedRounds = await getRounds();
-        const updated = updatedRounds.find((r) => r.id === selectedRound.id);
-        if (updated) {
-          setSelectedRound(updated);
-          const [t, e] = await Promise.all([
-            getTopicsByRound(updated.id),
-            getEntriesByRound(updated.id),
-          ]);
-          setTopics(t);
-          setEntries(e);
-        }
         toast.success(`Round advanced to ${newStatus}!`);
-      } catch (err) { toast.error(`Advance failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
-    } else {
-      await fetch("/api/arena/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "advanceRound", roundId: selectedRound.id, newStatus }),
-      });
-      await loadRounds();
-      toast.success(`Round advanced to ${newStatus}!`);
+      }
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
   const handleSelectWinner = async () => {
     if (!selectedRound || !winnerAddress.trim()) return;
 
-    if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
-      try {
-        await selectWinnerHook.writeAsync(
-          BigInt(selectedRound.onChainRoundId),
-          winnerAddress as `0x${string}`,
-        );
+    setIsActionLoading(true);
+    try {
+      if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
+        try {
+          await selectWinnerHook.writeAsync(
+            BigInt(selectedRound.onChainRoundId),
+            winnerAddress as `0x${string}`,
+          );
 
-        // API accepts wallet address directly (auto-resolves to user UUID)
-        await fetch("/api/arena/sync", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "selectWinner", roundId: selectedRound.id, winnerId: winnerAddress }),
-        });
+          // API accepts wallet address directly (auto-resolves to user UUID)
+          await fetch("/api/arena/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "selectWinner", roundId: selectedRound.id, winnerId: winnerAddress }),
+          });
 
-        setWinnerAddress("");
-        await loadRounds();
-        toast.success("Winner selected! Prize transferred.");
-      } catch (err) { toast.error(`Select winner failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
+          setWinnerAddress("");
+          await loadRounds();
+          toast.success("Winner selected! Prize transferred.");
+        } catch (err) { toast.error(`Select winner failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
+      }
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
   const handleVote = async (topicId: string) => {
     const topic = topics.find((t) => t.id === topicId);
-    if (isOnChain && isConnected && topic?.onChainTopicId != null) {
-      try {
-        await voteHook.writeAsync(BigInt(topic.onChainTopicId));
-        setIsVoteSyncing(true);
+    setIsActionLoading(true);
+    try {
+      if (isOnChain && isConnected && topic?.onChainTopicId != null) {
+        try {
+          await voteHook.writeAsync(BigInt(topic.onChainTopicId));
+          setIsVoteSyncing(true);
+          await fetch("/api/arena/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "voteForTopic", topicId, address }),
+          });
+          if (selectedRound) {
+            const t = await getTopicsByRound(selectedRound.id);
+            setTopics(t);
+          }
+          await refetchVoted();
+          toast.success("Vote submitted!");
+        } catch (err) { toast.error(`Vote failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); } finally {
+          setIsVoteSyncing(false);
+        }
+      } else {
         await fetch("/api/arena/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -292,21 +327,9 @@ export default function ArenaPage() {
           const t = await getTopicsByRound(selectedRound.id);
           setTopics(t);
         }
-        await refetchVoted();
-        toast.success("Vote submitted!");
-      } catch (err) { toast.error(`Vote failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); } finally {
-        setIsVoteSyncing(false);
       }
-    } else {
-      await fetch("/api/arena/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "voteForTopic", topicId, address }),
-      });
-      if (selectedRound) {
-        const t = await getTopicsByRound(selectedRound.id);
-        setTopics(t);
-      }
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -315,27 +338,47 @@ export default function ArenaPage() {
     const title = newTitle.trim();
     const description = newDescription.trim();
 
-    if (isOnChain && isConnected) {
-      try {
-        const receipt = await proposeHook.writeAsync(
-          BigInt(selectedRound.onChainRoundId ?? 0),
-          title,
-          description,
-        );
-        setNewTitle("");
-        setNewDescription("");
+    setIsActionLoading(true);
+    try {
+      if (isOnChain && isConnected) {
+        try {
+          const receipt = await proposeHook.writeAsync(
+            BigInt(selectedRound.onChainRoundId ?? 0),
+            title,
+            description,
+          );
+          setNewTitle("");
+          setNewDescription("");
 
-        let onChainTopicId: string | undefined;
-        for (const log of receipt.logs) {
-          try {
-            const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
-            if (decoded.eventName === "TopicProposed") {
-              onChainTopicId = String((decoded.args as { topicId: bigint }).topicId);
-              break;
-            }
-          } catch { /* not our event */ }
-        }
+          let onChainTopicId: string | undefined;
+          for (const log of receipt.logs) {
+            try {
+              const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+              if (decoded.eventName === "TopicProposed") {
+                onChainTopicId = String((decoded.args as { topicId: bigint }).topicId);
+                break;
+              }
+            } catch { /* not our event */ }
+          }
 
+          await fetch("/api/arena/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "proposeTopic",
+              roundId: selectedRound.id,
+              address,
+              title,
+              description,
+              onChainTopicId,
+            }),
+          });
+          const t = await getTopicsByRound(selectedRound.id);
+          setTopics(t);
+          await loadRounds();
+          toast.success(`Topic "${title}" proposed!`);
+        } catch (err) { toast.error(`Propose topic failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
+      } else {
         await fetch("/api/arena/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -345,32 +388,17 @@ export default function ArenaPage() {
             address,
             title,
             description,
-            onChainTopicId,
           }),
         });
+        setNewTitle("");
+        setNewDescription("");
         const t = await getTopicsByRound(selectedRound.id);
         setTopics(t);
         await loadRounds();
         toast.success(`Topic "${title}" proposed!`);
-      } catch (err) { toast.error(`Propose topic failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
-    } else {
-      await fetch("/api/arena/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "proposeTopic",
-          roundId: selectedRound.id,
-          address,
-          title,
-          description,
-        }),
-      });
-      setNewTitle("");
-      setNewDescription("");
-      const t = await getTopicsByRound(selectedRound.id);
-      setTopics(t);
-      await loadRounds();
-      toast.success(`Topic "${title}" proposed!`);
+      }
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -379,27 +407,46 @@ export default function ArenaPage() {
     const repoUrl = entryRepoUrl.trim();
     const description = entryDescription.trim();
 
-    if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
-      try {
-        const receipt = await entryHook.writeAsync(
-          BigInt(selectedRound.onChainRoundId),
-          repoUrl,
-          description,
-        );
-        setEntryRepoUrl("");
-        setEntryDescription("");
+    setIsActionLoading(true);
+    try {
+      if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
+        try {
+          const receipt = await entryHook.writeAsync(
+            BigInt(selectedRound.onChainRoundId),
+            repoUrl,
+            description,
+          );
+          setEntryRepoUrl("");
+          setEntryDescription("");
 
-        let onChainEntryId: string | undefined;
-        for (const log of receipt.logs) {
-          try {
-            const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
-            if (decoded.eventName === "EntrySubmitted") {
-              onChainEntryId = String((decoded.args as { entryId: bigint }).entryId);
-              break;
-            }
-          } catch { /* not our event */ }
-        }
+          let onChainEntryId: string | undefined;
+          for (const log of receipt.logs) {
+            try {
+              const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+              if (decoded.eventName === "EntrySubmitted") {
+                onChainEntryId = String((decoded.args as { entryId: bigint }).entryId);
+                break;
+              }
+            } catch { /* not our event */ }
+          }
 
+          await fetch("/api/arena/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "submitEntry",
+              roundId: selectedRound.id,
+              address,
+              repoUrl,
+              description,
+              onChainEntryId,
+            }),
+          });
+          const e = await getEntriesByRound(selectedRound.id);
+          setEntries(e);
+          toast.success("Entry submitted!");
+        } catch (err) { toast.error(`Submit entry failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
+      } else {
         await fetch("/api/arena/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -409,29 +456,15 @@ export default function ArenaPage() {
             address,
             repoUrl,
             description,
-            onChainEntryId,
           }),
         });
+        setEntryRepoUrl("");
+        setEntryDescription("");
         const e = await getEntriesByRound(selectedRound.id);
         setEntries(e);
-        toast.success("Entry submitted!");
-      } catch (err) { toast.error(`Submit entry failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
-    } else {
-      await fetch("/api/arena/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "submitEntry",
-          roundId: selectedRound.id,
-          address,
-          repoUrl,
-          description,
-        }),
-      });
-      setEntryRepoUrl("");
-      setEntryDescription("");
-      const e = await getEntriesByRound(selectedRound.id);
-      setEntries(e);
+      }
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -487,9 +520,9 @@ export default function ArenaPage() {
             </p>
             <Button
               onClick={handleCreateRound}
-              disabled={createRoundHook.isPending || createRoundHook.isConfirming}
+              disabled={isActionLoading || createRoundHook.isPending || createRoundHook.isConfirming}
             >
-              {createRoundHook.isPending ? "Sign tx..." : createRoundHook.isConfirming ? "Confirming..." : "Create Round"}
+              {createRoundHook.isPending ? "Sign tx..." : createRoundHook.isConfirming ? "Confirming..." : isActionLoading ? "Processing..." : "Create Round"}
             </Button>
           </div>
         </DialogContent>
@@ -572,13 +605,15 @@ export default function ArenaPage() {
                     variant="outline"
                     className="border-primary/30 text-primary"
                     onClick={handleAdvanceRound}
-                    disabled={advanceRoundHook.isPending || advanceRoundHook.isConfirming}
+                    disabled={isActionLoading || advanceRoundHook.isPending || advanceRoundHook.isConfirming}
                   >
                     {advanceRoundHook.isPending
                       ? "Sign tx..."
                       : advanceRoundHook.isConfirming
                         ? "Confirming..."
-                        : `Advance to ${selectedRound.status === "proposing" ? "Voting" : selectedRound.status === "voting" ? "Active" : "Judging"}`}
+                        : isActionLoading
+                          ? "Processing..."
+                          : `Advance to ${selectedRound.status === "proposing" ? "Voting" : selectedRound.status === "voting" ? "Active" : "Judging"}`}
                   </Button>
                 </div>
               )}
@@ -608,9 +643,9 @@ export default function ArenaPage() {
                     <Button
                       size="sm"
                       onClick={handleProposeTopic}
-                      disabled={!newTitle.trim() || proposeHook.isPending || proposeHook.isConfirming}
+                      disabled={isActionLoading || !newTitle.trim() || proposeHook.isPending || proposeHook.isConfirming}
                     >
-                      {proposeHook.isPending ? "Sign tx..." : proposeHook.isConfirming ? "Confirming..." : "Submit Topic"}
+                      {proposeHook.isPending ? "Sign tx..." : proposeHook.isConfirming ? "Confirming..." : isActionLoading ? "Processing..." : "Submit Topic"}
                     </Button>
                   </div>
                 </div>
@@ -652,7 +687,7 @@ export default function ArenaPage() {
                           topicId={topic.id}
                           currentVotes={topic.totalVotes}
                           onVote={handleVote}
-                          disabled={!canVote}
+                          disabled={!canVote || isActionLoading}
                           isPending={voteHook.isPending}
                           isConfirming={voteHook.isConfirming}
                           isSyncing={isVoteSyncing}
@@ -718,9 +753,9 @@ export default function ArenaPage() {
                       <Button
                         size="sm"
                         onClick={handleSubmitEntry}
-                        disabled={!entryRepoUrl.trim() || entryHook.isPending || entryHook.isConfirming}
+                        disabled={isActionLoading || !entryRepoUrl.trim() || entryHook.isPending || entryHook.isConfirming}
                       >
-                        {entryHook.isPending ? "Sign tx..." : entryHook.isConfirming ? "Confirming..." : "Submit Entry"}
+                        {entryHook.isPending ? "Sign tx..." : entryHook.isConfirming ? "Confirming..." : isActionLoading ? "Processing..." : "Submit Entry"}
                       </Button>
                     </div>
                   )}
@@ -782,9 +817,9 @@ export default function ArenaPage() {
                       <Button
                         size="sm"
                         onClick={handleSelectWinner}
-                        disabled={!winnerAddress.trim() || selectWinnerHook.isPending || selectWinnerHook.isConfirming}
+                        disabled={isActionLoading || !winnerAddress.trim() || selectWinnerHook.isPending || selectWinnerHook.isConfirming}
                       >
-                        {selectWinnerHook.isPending ? "Sign tx..." : selectWinnerHook.isConfirming ? "Confirming..." : "Select Winner"}
+                        {selectWinnerHook.isPending ? "Sign tx..." : selectWinnerHook.isConfirming ? "Confirming..." : isActionLoading ? "Processing..." : "Select Winner"}
                       </Button>
                     </div>
                   )}

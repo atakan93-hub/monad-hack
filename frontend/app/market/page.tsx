@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { useUser } from "@/lib/hooks/useUser";
 import { Button } from "@/components/ui/button";
 import { RequestCard } from "@/components/features/market/RequestCard";
@@ -29,6 +30,7 @@ export default function MarketPage() {
   const [formBudget, setFormBudget] = useState("");
   const [formCategory, setFormCategory] = useState<RequestCategory>("smart-contract");
   const [formDeadline, setFormDeadline] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   const loadRequests = useCallback(async () => {
     const data = await getRequests(
@@ -55,24 +57,36 @@ export default function MarketPage() {
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    await fetch("/api/market/requests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: formTitle,
-        description: formDesc,
-        budget: parseInt(formBudget),
-        category: formCategory,
-        deadline: new Date(formDeadline).toISOString(),
-        address,
-      }),
-    });
-    setShowNewRequest(false);
-    setFormTitle("");
-    setFormDesc("");
-    setFormBudget("");
-    setFormDeadline("");
-    loadRequests();
+    setIsCreating(true);
+    try {
+      const res = await fetch("/api/market/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: formTitle,
+          description: formDesc,
+          budget: parseInt(formBudget),
+          category: formCategory,
+          deadline: new Date(formDeadline).toISOString(),
+          address,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Request failed (${res.status})`);
+      }
+      setShowNewRequest(false);
+      setFormTitle("");
+      setFormDesc("");
+      setFormBudget("");
+      setFormDeadline("");
+      loadRequests();
+      toast.success("Request created!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to create request");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -179,8 +193,8 @@ export default function MarketPage() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
-              Create Request
+            <Button type="submit" className="w-full" disabled={isCreating}>
+              {isCreating ? "Creating..." : "Create Request"}
             </Button>
           </form>
         </DialogContent>

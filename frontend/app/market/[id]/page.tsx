@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { useUser } from "@/lib/hooks/useUser";
 import Link from "next/link";
@@ -98,19 +99,28 @@ export default function RequestDetailPage() {
     estimatedDays: number;
     message: string;
   }) => {
-    await fetch("/api/market/proposals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "submit", ...data }),
-    });
-    const props = await getProposalsByRequest(id);
-    const withUsers = await Promise.all(
-      props.map(async (p) => ({
-        ...p,
-        proposer: await getUserById(p.userId),
-      }))
-    );
-    setProposals(withUsers);
+    try {
+      const res = await fetch("/api/market/proposals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "submit", ...data }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `Submit failed (${res.status})`);
+      }
+      const props = await getProposalsByRequest(id);
+      const withUsers = await Promise.all(
+        props.map(async (p) => ({
+          ...p,
+          proposer: await getUserById(p.userId),
+        }))
+      );
+      setProposals(withUsers);
+      toast.success("Proposal submitted!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit proposal");
+    }
   };
 
   const reloadProposals = async () => {
@@ -192,8 +202,19 @@ export default function RequestDetailPage() {
       }
 
       await reloadEscrow();
+
+      const toastMessages: Record<string, string> = {
+        fund: "Deal funded!",
+        complete: "Work approved!",
+        release: "Funds released!",
+        dispute: "Deal disputed",
+        refund: "Deal refunded",
+      };
+      toast.success(toastMessages[action]);
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Transaction failed");
+      const errorMsg = err instanceof Error ? err.message.slice(0, 120) : "Transaction failed";
+      setSyncError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSyncing(false);
     }
@@ -216,8 +237,11 @@ export default function RequestDetailPage() {
       const req = await getRequestById(id);
       setRequest(req);
       await reloadProposals();
+      toast.success("Proposal accepted!");
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Accept failed");
+      const errorMsg = err instanceof Error ? err.message.slice(0, 120) : "Accept failed";
+      setSyncError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSyncing(false);
     }
@@ -261,8 +285,8 @@ export default function RequestDetailPage() {
         body: JSON.stringify({
           action: "createEscrow",
           address,
+          agentAddress: acceptedProp.proposer.address,
           requestId: id,
-          userId: acceptedProp.userId,
           amount: acceptedProp.price,
           onChainDealId,
         }),
@@ -273,8 +297,11 @@ export default function RequestDetailPage() {
       }
 
       await reloadEscrow();
+      toast.success("Escrow created!");
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message.slice(0, 120) : "Transaction failed");
+      const errorMsg = err instanceof Error ? err.message.slice(0, 120) : "Transaction failed";
+      setSyncError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsSyncing(false);
     }
