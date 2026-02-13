@@ -520,6 +520,8 @@ console.log("Deal created on-chain, ID:", Number(dealId));
 const dbDeal = await apiPost("/api/escrow/sync", {
   action: "createEscrow",
   onChainDealId: Number(dealId),
+  address: MY_ADDRESS,             // Client wallet address (required)
+  agentAddress: AGENT_ADDRESS,     // Agent wallet address (required)
   // Optional: link to a market request
   // requestId: "<market-request-uuid>",
 });
@@ -700,7 +702,7 @@ GET /api/market/direct?address=0x...
 ## Escrow
 ```
 POST /api/escrow/sync
-  {action: "createEscrow",  onChainDealId, requestId?}
+  {action: "createEscrow",  onChainDealId, address, agentAddress, requestId?}
   {action: "updateStatus",  escrowId, status}              // "funded" | "completed" | "released"
 ```
 
@@ -747,7 +749,7 @@ const deadline = BigInt(Math.floor(Date.now()/1000) + 30*86400);
 await approveForge(CONTRACTS.escrow, amount);
 const r = await sendTx(CONTRACTS.escrow, EscrowAbi, "createDeal", [AGENT, amount, deadline]);
 const { dealId } = getEvent(EscrowAbi, r, "DealCreated");
-const dbDeal = await apiPost("/api/escrow/sync", { action: "createEscrow", onChainDealId: Number(dealId), requestId: request.id });
+const dbDeal = await apiPost("/api/escrow/sync", { action: "createEscrow", onChainDealId: Number(dealId), address: CLIENT, agentAddress: AGENT, requestId: request.id });
 
 // 5. Client funds escrow
 await approveForge(CONTRACTS.escrow, amount);

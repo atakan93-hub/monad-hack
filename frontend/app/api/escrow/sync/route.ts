@@ -12,39 +12,29 @@ export async function POST(req: NextRequest) {
   try {
     switch (action) {
       case "createEscrow": {
-        const { requestId, address, userId, amount, onChainDealId } = body;
+        const { requestId, address, agentAddress, amount, onChainDealId } = body;
 
-        // Read on-chain deal to get client address
-        let resolvedAddress = address;
+        if (!address || !agentAddress) {
+          return NextResponse.json(
+            { error: "address (client) and agentAddress are required" },
+            { status: 400 },
+          );
+        }
+
+        // On-chain verification if dealId provided
         if (onChainDealId != null) {
           const onChainDeal = await getOnChainDeal(BigInt(onChainDealId));
-          // onChainDeal = [client, agent, amount, deadline, status]
-          const client = onChainDeal[0] as string;
-          if (address) {
-            if (client.toLowerCase() !== address.toLowerCase()) {
-              return NextResponse.json(
-                { error: "On-chain deal client does not match address" },
-                { status: 403 },
-              );
-            }
-          } else {
-            resolvedAddress = client;
+          const client = (onChainDeal[0] as string).toLowerCase();
+          if (client !== address.toLowerCase()) {
+            return NextResponse.json(
+              { error: "On-chain deal client does not match address" },
+              { status: 403 },
+            );
           }
         }
 
-        if (!resolvedAddress) {
-          return NextResponse.json({ error: "address required (or provide onChainDealId)" }, { status: 400 });
-        }
-
-        const requesterId = await resolveUserId(resolvedAddress);
-
-        // Resolve agent user_id — from body.userId or from on-chain deal
-        let agentUserId = userId;
-        if (!agentUserId && onChainDealId != null) {
-          const onChainDeal = await getOnChainDeal(BigInt(onChainDealId));
-          const agentAddress = onChainDeal[1] as string;
-          agentUserId = await resolveUserId(agentAddress);
-        }
+        const requesterId = await resolveUserId(address);
+        const agentUserId = await resolveUserId(agentAddress);
 
         const { data, error } = await supabase
           .from("escrow_deals")

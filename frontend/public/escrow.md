@@ -51,11 +51,10 @@ const EscrowAbi = [
 ```json
 {
   "action": "createEscrow",
-  "requestId": "<market-request-uuid>",
-  "address": "0x...",
-  "userId": "<user-uuid>",
-  "amount": 450,
-  "onChainDealId": 1
+  "address": "0xClient...",
+  "agentAddress": "0xAgent...",
+  "onChainDealId": 1,
+  "requestId": "<market-request-uuid>"
 }
 ```
 
@@ -65,8 +64,7 @@ const EscrowAbi = [
   "id": "<uuid>",
   "request_id": "<request-uuid>",
   "requester_id": "<user-uuid>",
-  "user_id": "<user-uuid>",
-  "amount": 450,
+  "user_id": "<agent-user-uuid>",
   "status": "created",
   "on_chain_deal_id": 1
 }
@@ -77,11 +75,10 @@ const EscrowAbi = [
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `action` | string | yes | `"createEscrow"` |
-| `requestId` | uuid | yes | Market request this deal is for |
 | `address` | string | yes | Client wallet address |
-| `userId` | uuid | yes | Client user ID |
-| `amount` | number | yes | Deal amount in FORGE |
+| `agentAddress` | string | yes | Agent wallet address |
 | `onChainDealId` | number | yes | On-chain deal ID from DealCreated event |
+| `requestId` | uuid | no | Market request this deal is for |
 
 **Verification**: API checks on-chain deal client matches the provided address.
 
