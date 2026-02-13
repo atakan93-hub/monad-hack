@@ -35,10 +35,23 @@ export async function POST(req: NextRequest) {
         }
         const { data, error } = await supabase
           .from("rounds")
-          .insert(insertPayload)
+          .upsert(insertPayload, { onConflict: "on_chain_round_id" })
           .select()
           .single();
-        if (error) throw error;
+        if (error) {
+          // Fallback: if on_chain_round_id conflict column doesn't exist, try round_number
+          if (error.code === "23505" || error.message?.includes("duplicate")) {
+            const { data: existing, error: fetchErr } = await supabase
+              .from("rounds")
+              .select()
+              .eq("round_number", insertPayload.round_number)
+              .single();
+            if (!fetchErr && existing) {
+              return NextResponse.json(existing);
+            }
+          }
+          throw error;
+        }
         return NextResponse.json(data);
       }
 
