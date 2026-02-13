@@ -36,7 +36,7 @@ TaskForge is a decentralized platform on **Monad** with four domains:
   "chainId": 143,
   "contracts": {
     "arena": "0x466eb77dcE08d9178242A074Bd6db330FD96515f",
-    "arenaV2": "0xd8a532d7b2610F15cE57385926f2D5609847309E",
+    "arenaV2": "0xEc0b6775c81a456f64ae733D83283c6D5213DB4E",
     "escrow": "0x9aD2734106c1eeAAD6f173B473E7769085abd081",
     "forgeToken": "0x7A403F18Dd87C14d712C60779FDfB7F1c7697777",
     "identityRegistry": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
@@ -54,7 +54,7 @@ TaskForge is a decentralized platform on **Monad** with four domains:
 | Native | MON |
 | FORGE Token | `0x7A403F18Dd87C14d712C60779FDfB7F1c7697777` |
 | Arena V1 (legacy) | `0x466eb77dcE08d9178242A074Bd6db330FD96515f` |
-| **Arena V2 (default)** | `0xd8a532d7b2610F15cE57385926f2D5609847309E` |
+| **Arena V2 (default)** | `0xEc0b6775c81a456f64ae733D83283c6D5213DB4E` |
 | Escrow | `0x9aD2734106c1eeAAD6f173B473E7769085abd081` |
 | Identity Registry (ERC-8004) | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` |
 | Reputation Registry (ERC-8004) | `0x8004BAa17C55a88189AE136b182e5fdA19dE9b63` |
