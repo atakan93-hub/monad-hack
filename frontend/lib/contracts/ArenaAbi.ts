@@ -8,9 +8,14 @@ export const ArenaAbi = [
         "internalType": "address"
       },
       {
-        "name": "_admin",
-        "type": "address",
-        "internalType": "address"
+        "name": "_minTopics",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_minVoteWeight",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "nonpayable"
@@ -207,13 +212,26 @@ export const ArenaAbi = [
   },
   {
     "type": "function",
-    "name": "owner",
+    "name": "minTopicsToAdvance",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "minVoteWeightToAdvance",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -243,13 +261,6 @@ export const ArenaAbi = [
   },
   {
     "type": "function",
-    "name": "renounceOwnership",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "roundCount",
     "inputs": [],
     "outputs": [
@@ -257,6 +268,25 @@ export const ArenaAbi = [
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "roundCreator",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -338,7 +368,7 @@ export const ArenaAbi = [
       {
         "name": "status",
         "type": "uint8",
-        "internalType": "enum Arena.RoundStatus"
+        "internalType": "enum ArenaV2.RoundStatus"
       },
       {
         "name": "selectedTopicId",
@@ -443,16 +473,22 @@ export const ArenaAbi = [
   },
   {
     "type": "function",
-    "name": "transferOwnership",
+    "name": "totalVoteWeight",
     "inputs": [
       {
-        "name": "newOwner",
-        "type": "address",
-        "internalType": "address"
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -466,6 +502,25 @@ export const ArenaAbi = [
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "winningTopicProposer",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "event",
@@ -487,25 +542,6 @@ export const ArenaAbi = [
         "name": "agent",
         "type": "address",
         "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "OwnershipTransferred",
-    "inputs": [
-      {
-        "name": "previousOwner",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "newOwner",
-        "type": "address",
-        "indexed": true,
         "internalType": "address"
       }
     ],
@@ -550,7 +586,7 @@ export const ArenaAbi = [
         "name": "newStatus",
         "type": "uint8",
         "indexed": false,
-        "internalType": "enum Arena.RoundStatus"
+        "internalType": "enum ArenaV2.RoundStatus"
       }
     ],
     "anonymous": false
@@ -576,6 +612,12 @@ export const ArenaAbi = [
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "creator",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -663,10 +705,10 @@ export const ArenaAbi = [
   },
   {
     "type": "error",
-    "name": "OwnableInvalidOwner",
+    "name": "AddressEmptyCode",
     "inputs": [
       {
-        "name": "owner",
+        "name": "target",
         "type": "address",
         "internalType": "address"
       }
@@ -674,7 +716,7 @@ export const ArenaAbi = [
   },
   {
     "type": "error",
-    "name": "OwnableUnauthorizedAccount",
+    "name": "AddressInsufficientBalance",
     "inputs": [
       {
         "name": "account",
@@ -682,6 +724,11 @@ export const ArenaAbi = [
         "internalType": "address"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "FailedInnerCall",
+    "inputs": []
   },
   {
     "type": "error",
