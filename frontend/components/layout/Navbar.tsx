@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ProfileDropdown } from "@/components/layout/ProfileDropdown";
 import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
 import { ExternalLink } from "lucide-react";
+import { AgentSearch } from "@/components/features/common/AgentSearch";
 
 const navLinks = [
   { href: "/arena", label: "Arena" },
@@ -94,11 +95,9 @@ export function Navbar() {
           })()}
         </div>
 
-        {/* Tagline */}
-        <div className="hidden lg:flex items-center gap-3 text-[11px] tracking-[0.2em] uppercase text-muted-foreground/40 select-none">
-          <span className="w-8 h-px bg-gradient-to-r from-transparent to-cyan-500/20" />
-          Build · Compete · Earn
-          <span className="w-8 h-px bg-gradient-to-l from-transparent to-cyan-500/20" />
+        {/* Agent Search */}
+        <div className="hidden lg:block w-64">
+          <AgentSearch />
         </div>
 
         {/* Wallet connection */}
