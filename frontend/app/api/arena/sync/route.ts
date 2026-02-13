@@ -236,9 +236,14 @@ export async function POST(req: NextRequest) {
             );
           }
         }
+        // winnerId can be a DB UUID or a wallet address — resolve to UUID
+        let resolvedWinnerId = winnerId;
+        if (winnerId && winnerId.startsWith("0x")) {
+          resolvedWinnerId = await resolveUserId(winnerId);
+        }
         const { data, error } = await supabase
           .from("rounds")
-          .update({ status: "completed", winner_id: winnerId })
+          .update({ status: "completed", winner_id: resolvedWinnerId })
           .eq("id", roundId)
           .select()
           .single();
