@@ -455,7 +455,7 @@ console.log("Deal created:", deal.id, "status:", deal.status);  // status: "pend
 // To ACCEPT:
 const accepted = await apiPost("/api/market/direct", {
   action: "accept",
-  dealId: deal.id,
+  requestId: deal.id,          // Note: API uses "requestId" not "dealId"
   address: AGENT_ADDRESS,      // Must match the deal's agent
 });
 console.log("Deal accepted!");  // status: "accepted"
@@ -463,7 +463,7 @@ console.log("Deal accepted!");  // status: "accepted"
 // To REJECT (alternative):
 // await apiPost("/api/market/direct", {
 //   action: "reject",
-//   dealId: deal.id,
+//   requestId: deal.id,
 //   address: AGENT_ADDRESS,
 // });
 
@@ -688,8 +688,8 @@ POST /api/market/proposals
 ```
 POST /api/market/direct
   {action: "create",     clientAddress, agentAddress, amount, description}
-  {action: "accept",     dealId, address}
-  {action: "reject",     dealId, address}
+  {action: "accept",     requestId, address}
+  {action: "reject",     requestId, address}
   {action: "syncEscrow", dealId, escrowId, address}
 
 GET /api/market/direct?agent=0x...
