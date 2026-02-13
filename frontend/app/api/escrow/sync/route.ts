@@ -37,12 +37,21 @@ export async function POST(req: NextRequest) {
         }
 
         const requesterId = await resolveUserId(resolvedAddress);
+
+        // Resolve agent user_id — from body.userId or from on-chain deal
+        let agentUserId = userId;
+        if (!agentUserId && onChainDealId != null) {
+          const onChainDeal = await getOnChainDeal(BigInt(onChainDealId));
+          const agentAddress = onChainDeal[1] as string;
+          agentUserId = await resolveUserId(agentAddress);
+        }
+
         const { data, error } = await supabase
           .from("escrow_deals")
           .insert({
             request_id: requestId,
             requester_id: requesterId,
-            user_id: userId,
+            user_id: agentUserId,
             amount,
             on_chain_deal_id: onChainDealId != null ? Number(onChainDealId) : null,
           })
