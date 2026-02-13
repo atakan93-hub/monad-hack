@@ -13,7 +13,6 @@ import type {
   ProposalStatus,
   RoundStatus,
   DealStatus,
-  DirectRequestStatus,
   SBTBadge,
 } from "./types";
 
