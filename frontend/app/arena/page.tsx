@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { useAccount } from "wagmi";
 import { useUser } from "@/lib/hooks/useUser";
 import { Button } from "@/components/ui/button";
@@ -186,7 +187,8 @@ export default function ArenaPage() {
         setNewPrize("");
         setShowCreateRound(false);
         await loadRounds();
-      } catch { /* tx rejected or failed */ }
+        toast.success("Round created successfully!");
+      } catch (err) { toast.error(`Create round failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
     } else {
       // Off-chain fallback
       await fetch("/api/arena/sync", {
@@ -197,6 +199,7 @@ export default function ArenaPage() {
       setNewPrize("");
       setShowCreateRound(false);
       await loadRounds();
+      toast.success("Round created!");
     }
   };
 
@@ -231,7 +234,8 @@ export default function ArenaPage() {
           setTopics(t);
           setEntries(e);
         }
-      } catch { /* tx rejected or failed */ }
+        toast.success(`Round advanced to ${newStatus}!`);
+      } catch (err) { toast.error(`Advance failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
     } else {
       await fetch("/api/arena/sync", {
         method: "POST",
@@ -239,6 +243,7 @@ export default function ArenaPage() {
         body: JSON.stringify({ action: "advanceRound", roundId: selectedRound.id, newStatus }),
       });
       await loadRounds();
+      toast.success(`Round advanced to ${newStatus}!`);
     }
   };
 
@@ -252,21 +257,17 @@ export default function ArenaPage() {
           winnerAddress as `0x${string}`,
         );
 
-        // Find the winner's DB user ID from entries
-        const winnerEntry = entries.find(
-          (e) => userNames[e.userId]?.toLowerCase().includes(winnerAddress.toLowerCase())
-        );
-        const winnerId = winnerEntry?.userId;
-
+        // API accepts wallet address directly (auto-resolves to user UUID)
         await fetch("/api/arena/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "selectWinner", roundId: selectedRound.id, winnerId }),
+          body: JSON.stringify({ action: "selectWinner", roundId: selectedRound.id, winnerId: winnerAddress }),
         });
 
         setWinnerAddress("");
         await loadRounds();
-      } catch { /* tx rejected or failed */ }
+        toast.success("Winner selected! Prize transferred.");
+      } catch (err) { toast.error(`Select winner failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
     }
   };
 
@@ -286,7 +287,8 @@ export default function ArenaPage() {
           setTopics(t);
         }
         await refetchVoted();
-      } catch { /* tx rejected or failed */ } finally {
+        toast.success("Vote submitted!");
+      } catch (err) { toast.error(`Vote failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); } finally {
         setIsVoteSyncing(false);
       }
     } else {
@@ -343,7 +345,8 @@ export default function ArenaPage() {
         const t = await getTopicsByRound(selectedRound.id);
         setTopics(t);
         await loadRounds();
-      } catch { /* tx rejected or failed */ }
+        toast.success(`Topic "${title}" proposed!`);
+      } catch (err) { toast.error(`Propose topic failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
     } else {
       await fetch("/api/arena/sync", {
         method: "POST",
@@ -361,6 +364,7 @@ export default function ArenaPage() {
       const t = await getTopicsByRound(selectedRound.id);
       setTopics(t);
       await loadRounds();
+      toast.success(`Topic "${title}" proposed!`);
     }
   };
 
@@ -404,7 +408,8 @@ export default function ArenaPage() {
         });
         const e = await getEntriesByRound(selectedRound.id);
         setEntries(e);
-      } catch { /* tx rejected or failed */ }
+        toast.success("Entry submitted!");
+      } catch (err) { toast.error(`Submit entry failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); }
     } else {
       await fetch("/api/arena/sync", {
         method: "POST",

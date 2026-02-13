@@ -3,6 +3,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const inter = Inter({
@@ -46,6 +47,7 @@ export default function RootLayout({
           <Navbar />
           <main className="pt-16 min-h-screen">{children}</main>
           <Footer />
+          <Toaster theme="dark" position="bottom-right" richColors />
         </Providers>
       </body>
     </html>
