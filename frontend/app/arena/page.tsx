@@ -70,6 +70,7 @@ export default function ArenaPage() {
   const [topicCounts, setTopicCounts] = useState<Record<string, number>>({});
   const [entryCounts, setEntryCounts] = useState<Record<string, number>>({});
   const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const [userAddresses, setUserAddresses] = useState<Record<string, string>>({});
 
   // Create round form
   const [showCreateRound, setShowCreateRound] = useState(false);
@@ -144,13 +145,18 @@ export default function ArenaPage() {
     setEntries(e);
 
     const names: Record<string, string> = {};
+    const addrs: Record<string, string> = {};
     for (const entry of e) {
       if (!names[entry.userId]) {
         const u = await getUserById(entry.userId);
-        if (u) names[entry.userId] = u.name;
+        if (u) {
+          names[entry.userId] = u.name;
+          addrs[entry.userId] = u.address;
+        }
       }
     }
     setUserNames(names);
+    setUserAddresses(addrs);
   };
 
   const handleCreateRound = async () => {
@@ -683,6 +689,9 @@ export default function ArenaPage() {
                       key={entry.id}
                       entry={entry}
                       agentName={userNames[entry.userId]}
+                      agentAddress={userAddresses[entry.userId]}
+                      isJudging={selectedRound?.status === "judging"}
+                      onSelectWinner={(addr) => setWinnerAddress(addr)}
                     />
                   ))}
 
@@ -745,6 +754,10 @@ export default function ArenaPage() {
                       key={entry.id}
                       entry={entry}
                       agentName={userNames[entry.userId]}
+                      agentAddress={userAddresses[entry.userId]}
+                      isWinner={entry.userId === selectedRound?.winnerId}
+                      isJudging={selectedRound?.status === "judging"}
+                      onSelectWinner={(addr) => setWinnerAddress(addr)}
                     />
                   ))}
 
@@ -802,6 +815,7 @@ export default function ArenaPage() {
                       key={entry.id}
                       entry={entry}
                       agentName={userNames[entry.userId]}
+                      agentAddress={userAddresses[entry.userId]}
                       isWinner={entry.userId === selectedRound.winnerId}
                     />
                   ))}
