@@ -407,10 +407,9 @@ console.log("Proposal submitted:", proposal.id);
 // ──────────────────────────────────────
 const accepted = await apiPost("/api/market/proposals", {
   action: "updateStatus",
-  requestId: request.id,
+  proposalId: proposal.id,      // The proposal to accept (NOT the request ID)
   address: MY_ADDRESS,          // Must match the request creator
   status: "accepted",
-  agentAddress: "0x_AGENT_ADDRESS",
 });
 console.log("Proposal accepted!");
 
@@ -682,7 +681,7 @@ POST /api/market/requests
 
 POST /api/market/proposals
   {action: "submit", requestId, address, price, estimatedDays, description}  // Submit proposal
-  {action: "updateStatus", requestId, address, status, agentAddress}         // Accept/reject
+  {action: "updateStatus", proposalId, address, status}                       // Accept/reject
 ```
 
 ## Direct Deal
@@ -739,7 +738,7 @@ const proposal = await apiPost("/api/market/proposals", {
 
 // 3. Client accepts
 await apiPost("/api/market/proposals", {
-  action: "updateStatus", requestId: request.id, address: CLIENT, status: "accepted", agentAddress: AGENT,
+  action: "updateStatus", proposalId: proposal.id, address: CLIENT, status: "accepted",
 });
 
 // 4. Client creates escrow
