@@ -68,6 +68,7 @@ export interface Round {
   selectedTopicId?: string;
   winnerId?: string;
   onChainRoundId?: number;
+  creator?: string;
   createdAt: string;
 }
 
@@ -79,6 +80,7 @@ export interface Topic {
   description: string;
   totalVotes: number;
   onChainTopicId?: number;
+  isWinning?: boolean;
   createdAt: string;
 }
 
@@ -91,6 +93,32 @@ export interface ArenaEntry {
   demoUrl?: string;
   onChainEntryId?: number;
   createdAt: string;
+}
+
+// === Direct Request ===
+export type DirectRequestStatus =
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "escrow_created"
+  | "funded"
+  | "completed"
+  | "released"
+  | "expired";
+
+export interface DirectRequest {
+  id: string;
+  clientId?: string;
+  agentId?: string;
+  clientAddress: string;
+  agentAddress: string;
+  amount: number;
+  description: string;
+  deadline?: string;
+  escrowId?: string;
+  status: DirectRequestStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // === Escrow ===

@@ -7,11 +7,13 @@ import type {
   ArenaEntry,
   EscrowDeal,
   User,
+  DirectRequest,
   RequestStatus,
   RequestCategory,
   ProposalStatus,
   RoundStatus,
   DealStatus,
+  DirectRequestStatus,
   SBTBadge,
 } from "./types";
 
@@ -22,10 +24,11 @@ interface UserRow { id: string; address: string; name: string; role: string; ava
 interface BadgeRow { id: string; user_id: string; name: string; tier: string; issued_at: string; }
 interface RequestRow { id: string; title: string; description: string; category: string; budget: number; deadline: string; status: string; requester_id: string; assigned_user_id: string | null; created_at: string; }
 interface ProposalRow { id: string; request_id: string; user_id: string; price: number; estimated_days: number; message: string; status: string; created_at: string; }
-interface RoundRow { id: string; round_number: number; prize: number; status: string; selected_topic_id: string | null; winner_id: string | null; on_chain_round_id: number | null; created_at: string; }
-interface TopicRow { id: string; round_id: string; proposer_id: string; title: string; description: string; total_votes: number; on_chain_topic_id: number | null; created_at: string; }
+interface RoundRow { id: string; round_number: number; prize: number; status: string; selected_topic_id: string | null; winner_id: string | null; on_chain_round_id: number | null; creator: string | null; created_at: string; }
+interface TopicRow { id: string; round_id: string; proposer_id: string; title: string; description: string; total_votes: number; on_chain_topic_id: number | null; is_winning: boolean | null; created_at: string; }
 interface EntryRow { id: string; round_id: string; user_id: string; repo_url: string; description: string; demo_url: string | null; on_chain_entry_id: number | null; created_at: string; }
 interface EscrowRow { id: string; request_id: string; requester_id: string; user_id: string; amount: number; status: string; on_chain_deal_id: number | null; created_at: string; completed_at: string | null; }
+interface DirectRequestRow { id: string; client_id: string | null; agent_id: string | null; client_address: string; agent_address: string; amount: number; description: string; deadline: string | null; escrow_id: string | null; status: string; created_at: string; updated_at: string; }
 
 // ============================================================
 // Helpers: DB row → app type (snake_case → camelCase)
@@ -96,6 +99,7 @@ function toRound(row: RoundRow): Round {
     selectedTopicId: row.selected_topic_id ?? undefined,
     winnerId: row.winner_id ?? undefined,
     onChainRoundId: row.on_chain_round_id ?? undefined,
+    creator: row.creator ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -109,6 +113,7 @@ function toTopic(row: TopicRow): Topic {
     description: row.description,
     totalVotes: row.total_votes,
     onChainTopicId: row.on_chain_topic_id ?? undefined,
+    isWinning: row.is_winning ?? undefined,
     createdAt: row.created_at,
   };
 }
@@ -137,6 +142,23 @@ function toEscrow(row: EscrowRow): EscrowDeal {
     onChainDealId: row.on_chain_deal_id ?? undefined,
     createdAt: row.created_at,
     completedAt: row.completed_at ?? undefined,
+  };
+}
+
+function toDirectRequest(row: DirectRequestRow): DirectRequest {
+  return {
+    id: row.id,
+    clientId: row.client_id ?? undefined,
+    agentId: row.agent_id ?? undefined,
+    clientAddress: row.client_address,
+    agentAddress: row.agent_address,
+    amount: Number(row.amount),
+    description: row.description,
+    deadline: row.deadline ?? undefined,
+    escrowId: row.escrow_id ?? undefined,
+    status: row.status as DirectRequest["status"],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -617,4 +639,48 @@ export async function getDashboardStats(userId: string): Promise<{
     totalProposals,
     totalSpent,
   };
+}
+
+// ============================================================
+// Direct Requests
+// ============================================================
+
+export async function getDirectRequestsByAgent(agentAddress: string): Promise<DirectRequest[]> {
+  const { data, error } = await supabase
+    .from("direct_requests")
+    .select("*")
+    .ilike("agent_address", agentAddress)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(toDirectRequest);
+}
+
+export async function getDirectRequestsByClient(clientAddress: string): Promise<DirectRequest[]> {
+  const { data, error } = await supabase
+    .from("direct_requests")
+    .select("*")
+    .ilike("client_address", clientAddress)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(toDirectRequest);
+}
+
+export async function getDirectRequestById(id: string): Promise<DirectRequest | null> {
+  const { data, error } = await supabase
+    .from("direct_requests")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toDirectRequest(data) : null;
+}
+
+export async function getDirectRequestsByAddress(address: string): Promise<DirectRequest[]> {
+  const { data, error } = await supabase
+    .from("direct_requests")
+    .select("*")
+    .or(`client_address.ilike.${address},agent_address.ilike.${address}`)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(toDirectRequest);
 }

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     switch (action) {
       case "createRound": {
-        const { onChainRoundId } = body;
+        const { onChainRoundId, creator } = body;
         if (onChainRoundId == null) {
           return NextResponse.json({ error: "onChainRoundId is required" }, { status: 400 });
         }
@@ -24,9 +24,18 @@ export async function POST(req: NextRequest) {
         if (roundNumber === 0 && prize === 0) {
           return NextResponse.json({ error: "Round does not exist on-chain" }, { status: 404 });
         }
+        const insertPayload: Record<string, unknown> = {
+          round_number: roundNumber,
+          prize,
+          status: "proposing",
+          on_chain_round_id: Number(onChainRoundId),
+        };
+        if (creator) {
+          insertPayload.creator = creator;
+        }
         const { data, error } = await supabase
           .from("rounds")
-          .insert({ round_number: roundNumber, prize, status: "proposing", on_chain_round_id: Number(onChainRoundId) })
+          .insert(insertPayload)
           .select()
           .single();
         if (error) throw error;
@@ -62,7 +71,7 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // If on-chain has a selected topic, find the matching DB topic
+        // If on-chain has a selected topic, find the matching DB topic and mark it as winning
         const updatePayload: Record<string, unknown> = { status: newStatus };
         if (onChainSelectedTopicId != null) {
           const { data: topicRow } = await supabase
@@ -72,6 +81,11 @@ export async function POST(req: NextRequest) {
             .single();
           if (topicRow) {
             updatePayload.selected_topic_id = topicRow.id;
+            // Mark the winning topic
+            await supabase
+              .from("topics")
+              .update({ is_winning: true })
+              .eq("id", topicRow.id);
           }
         }
 

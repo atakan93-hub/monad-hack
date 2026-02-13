@@ -23,10 +23,10 @@ import {
   getEntriesByRound,
   getUserById,
 } from "@/lib/supabase-api";
-import { useVoteForTopic, useProposeTopic, useSubmitEntry, useHasVoted } from "@/lib/hooks/useArena";
-import { useForgeBalance } from "@/lib/hooks/useForgeToken";
+import { useVoteForTopic, useProposeTopic, useSubmitEntry, useHasVoted, useCreateRound, useAdvanceRound, useSelectWinner } from "@/lib/hooks/useArena";
+import { useForgeBalance, useForgeApprove } from "@/lib/hooks/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
-import { formatUnits, decodeEventLog } from "viem";
+import { formatUnits, decodeEventLog, parseUnits } from "viem";
 import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
 import { formatForge } from "@/lib/utils";
 import type { Round, Topic, ArenaEntry, RoundStatus } from "@/lib/types";
@@ -70,10 +70,18 @@ export default function ArenaPage() {
   const [entryCounts, setEntryCounts] = useState<Record<string, number>>({});
   const [userNames, setUserNames] = useState<Record<string, string>>({});
 
+  // Create round form
+  const [showCreateRound, setShowCreateRound] = useState(false);
+  const [newPrize, setNewPrize] = useState("");
+
   // wagmi write hooks
   const voteHook = useVoteForTopic();
   const proposeHook = useProposeTopic();
   const entryHook = useSubmitEntry();
+  const createRoundHook = useCreateRound();
+  const advanceRoundHook = useAdvanceRound();
+  const selectWinnerHook = useSelectWinner();
+  const { approveAsync } = useForgeApprove();
 
   // Voting power: FORGE balance + already voted check
   const roundIdNum = selectedRound?.onChainRoundId != null
@@ -94,6 +102,9 @@ export default function ArenaPage() {
   // Entry submission form
   const [entryRepoUrl, setEntryRepoUrl] = useState("");
   const [entryDescription, setEntryDescription] = useState("");
+
+  // Select winner form
+  const [winnerAddress, setWinnerAddress] = useState("");
 
   const loadRounds = useCallback(async () => {
     const data = await getRounds(
@@ -139,6 +150,124 @@ export default function ArenaPage() {
       }
     }
     setUserNames(names);
+  };
+
+  const handleCreateRound = async () => {
+    const prizeNum = parseFloat(newPrize);
+    if (isNaN(prizeNum) || prizeNum < 0) return;
+
+    if (isOnChain && isConnected) {
+      try {
+        const prize = parseUnits(newPrize || "0", 18);
+        if (prize > 0n) {
+          await approveAsync(CONTRACT_ADDRESSES.ARENA, prize);
+        }
+        const receipt = await createRoundHook.writeAsync(prize);
+
+        let onChainRoundId: number | undefined;
+        for (const log of receipt.logs) {
+          try {
+            const decoded = decodeEventLog({ abi: ArenaAbi, data: log.data, topics: log.topics });
+            if (decoded.eventName === "RoundCreated") {
+              onChainRoundId = Number((decoded.args as { roundId: bigint }).roundId);
+              break;
+            }
+          } catch { /* not our event */ }
+        }
+
+        if (onChainRoundId != null) {
+          await fetch("/api/arena/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "createRound", onChainRoundId, creator: address }),
+          });
+        }
+
+        setNewPrize("");
+        setShowCreateRound(false);
+        await loadRounds();
+      } catch { /* tx rejected or failed */ }
+    } else {
+      // Off-chain fallback
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "createRound", onChainRoundId: 0, creator: address }),
+      });
+      setNewPrize("");
+      setShowCreateRound(false);
+      await loadRounds();
+    }
+  };
+
+  const handleAdvanceRound = async () => {
+    if (!selectedRound) return;
+    const statusMap: Record<string, string> = {
+      proposing: "voting",
+      voting: "active",
+      active: "judging",
+    };
+    const newStatus = statusMap[selectedRound.status];
+    if (!newStatus) return;
+
+    if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
+      try {
+        await advanceRoundHook.writeAsync(BigInt(selectedRound.onChainRoundId));
+        await fetch("/api/arena/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "advanceRound", roundId: selectedRound.id, newStatus }),
+        });
+        await loadRounds();
+        // Refresh selected round
+        const updatedRounds = await getRounds();
+        const updated = updatedRounds.find((r) => r.id === selectedRound.id);
+        if (updated) {
+          setSelectedRound(updated);
+          const [t, e] = await Promise.all([
+            getTopicsByRound(updated.id),
+            getEntriesByRound(updated.id),
+          ]);
+          setTopics(t);
+          setEntries(e);
+        }
+      } catch { /* tx rejected or failed */ }
+    } else {
+      await fetch("/api/arena/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "advanceRound", roundId: selectedRound.id, newStatus }),
+      });
+      await loadRounds();
+    }
+  };
+
+  const handleSelectWinner = async () => {
+    if (!selectedRound || !winnerAddress.trim()) return;
+
+    if (isOnChain && isConnected && selectedRound.onChainRoundId != null) {
+      try {
+        await selectWinnerHook.writeAsync(
+          BigInt(selectedRound.onChainRoundId),
+          winnerAddress as `0x${string}`,
+        );
+
+        // Find the winner's DB user ID from entries
+        const winnerEntry = entries.find(
+          (e) => userNames[e.userId]?.toLowerCase().includes(winnerAddress.toLowerCase())
+        );
+        const winnerId = winnerEntry?.userId;
+
+        await fetch("/api/arena/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "selectWinner", roundId: selectedRound.id, winnerId }),
+        });
+
+        setWinnerAddress("");
+        await loadRounds();
+      } catch { /* tx rejected or failed */ }
+    }
   };
 
   const handleVote = async (topicId: string) => {
@@ -299,6 +428,14 @@ export default function ArenaPage() {
     (t) => t.id === selectedRound?.selectedTopicId
   );
 
+  // Determine if advance button should be shown
+  const canAdvance =
+    isConnected &&
+    selectedRound &&
+    (selectedRound.status === "proposing" ||
+      selectedRound.status === "voting" ||
+      selectedRound.status === "active");
+
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
       {/* Header */}
@@ -312,7 +449,40 @@ export default function ArenaPage() {
             Compete in rounds to win FORGE prizes
           </p>
         </div>
+
+        {/* Anyone can create a round */}
+        {isConnected && (
+          <Button onClick={() => setShowCreateRound(true)}>
+            Create Round
+          </Button>
+        )}
       </div>
+
+      {/* Create Round Dialog */}
+      <Dialog open={showCreateRound} onOpenChange={setShowCreateRound}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Create New Round</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 mt-4">
+            <Input
+              placeholder="Prize amount (FORGE)"
+              type="number"
+              value={newPrize}
+              onChange={(e) => setNewPrize(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Anyone can create a round. If you set a prize, FORGE tokens will be transferred from your wallet.
+            </p>
+            <Button
+              onClick={handleCreateRound}
+              disabled={createRoundHook.isPending || createRoundHook.isConfirming}
+            >
+              {createRoundHook.isPending ? "Sign tx..." : createRoundHook.isConfirming ? "Confirming..." : "Create Round"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Filter Tabs */}
       <div className="flex gap-2 mb-8">
@@ -373,7 +543,34 @@ export default function ArenaPage() {
                 <DialogTitle className="font-heading text-xl">
                   {statusBanners[selectedRound.status]}
                 </DialogTitle>
+                {selectedRound.creator && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Created by{" "}
+                    <span className="font-mono text-accent">
+                      {selectedRound.creator.slice(0, 6)}...{selectedRound.creator.slice(-4)}
+                    </span>
+                  </p>
+                )}
               </DialogHeader>
+
+              {/* Advance Round Button */}
+              {canAdvance && (
+                <div className="mt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-primary/30 text-primary"
+                    onClick={handleAdvanceRound}
+                    disabled={advanceRoundHook.isPending || advanceRoundHook.isConfirming}
+                  >
+                    {advanceRoundHook.isPending
+                      ? "Sign tx..."
+                      : advanceRoundHook.isConfirming
+                        ? "Confirming..."
+                        : `Advance to ${selectedRound.status === "proposing" ? "Voting" : selectedRound.status === "voting" ? "Active" : "Judging"}`}
+                  </Button>
+                </div>
+              )}
 
               {/* Proposing: topic list + proposal form */}
               {selectedRound.status === "proposing" && (
@@ -516,7 +713,7 @@ export default function ArenaPage() {
                 </div>
               )}
 
-              {/* Judging: show entries, no submission */}
+              {/* Judging: show entries + select winner */}
               {selectedRound.status === "judging" && (
                 <div className="flex flex-col gap-4 mt-4">
                   {selectedTopic && (
@@ -550,6 +747,28 @@ export default function ArenaPage() {
                     <p className="text-sm text-muted-foreground">
                       No entries were submitted.
                     </p>
+                  )}
+
+                  {/* Select Winner — in V2 only the winning topic proposer can do this */}
+                  {isConnected && (
+                    <div className="border-t border-cyan-500/10 pt-4 flex flex-col gap-3">
+                      <h4 className="font-semibold text-sm">Select Winner</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Enter the winner&apos;s wallet address. In ArenaV2, only the winning topic proposer can select the winner.
+                      </p>
+                      <Input
+                        placeholder="Winner address (0x...)"
+                        value={winnerAddress}
+                        onChange={(e) => setWinnerAddress(e.target.value)}
+                      />
+                      <Button
+                        size="sm"
+                        onClick={handleSelectWinner}
+                        disabled={!winnerAddress.trim() || selectWinnerHook.isPending || selectWinnerHook.isConfirming}
+                      >
+                        {selectWinnerHook.isPending ? "Sign tx..." : selectWinnerHook.isConfirming ? "Confirming..." : "Select Winner"}
+                      </Button>
+                    </div>
                   )}
                 </div>
               )}
