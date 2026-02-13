@@ -1,23 +1,18 @@
 "use client";
 
-import { useAccount, useReadContract } from "wagmi";
-import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
-import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
+import { useAccount } from "wagmi";
 
+/**
+ * ArenaV2 has no admin — anyone can create rounds, advance, etc.
+ * This hook returns isAdmin=true for all connected wallets (no admin gating).
+ */
 export function useAdminCheck() {
   const { address, isConnected } = useAccount();
 
-  const { data: adminAddress, isLoading } = useReadContract({
-    address: CONTRACT_ADDRESSES.ARENA_V2,
-    abi: ArenaAbi,
-    functionName: "owner",
-  });
-
-  const isAdmin =
-    isConnected &&
-    !!address &&
-    !!adminAddress &&
-    address.toLowerCase() === (adminAddress as string).toLowerCase();
-
-  return { isAdmin, isLoading, adminAddress, connectedAddress: address };
+  return {
+    isAdmin: isConnected && !!address,
+    isLoading: false,
+    adminAddress: address,
+    connectedAddress: address,
+  };
 }
