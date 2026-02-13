@@ -123,10 +123,21 @@ export default function UserDashboardPage() {
     async function load() {
       if (!profileAddress) return;
 
-      const foundUser = await getUserByAddress(profileAddress);
+      let foundUser = await getUserByAddress(profileAddress);
       if (!foundUser) {
-        setNotFound(true);
-        return;
+        // Auto-register: create user in DB via API, then retry
+        try {
+          const res = await fetch(`/api/agents/${profileAddress}/identity`);
+          if (res.ok) {
+            // resolveUserId on the server side will auto-create the user
+            foundUser = await getUserByAddress(profileAddress);
+          }
+        } catch { /* ignore */ }
+
+        if (!foundUser) {
+          setNotFound(true);
+          return;
+        }
       }
       setProfileUser(foundUser);
 

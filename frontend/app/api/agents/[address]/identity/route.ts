@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createPublicClient, http, defineChain } from "viem";
+import { createPublicClient, http, defineChain, isAddress } from "viem";
 import { IdentityRegistryAbi } from "@/lib/contracts/IdentityRegistryAbi";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
+import { resolveUserId } from "@/lib/resolve-user";
 
 const MONAD_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
 const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL;
@@ -23,6 +24,11 @@ export async function GET(
   { params }: { params: Promise<{ address: string }> },
 ) {
   const { address } = await params;
+
+  // Auto-register user in DB if not exists (enables search → profile flow)
+  if (isAddress(address)) {
+    try { await resolveUserId(address); } catch { /* ignore */ }
+  }
 
   if (!isDeployed) {
     return NextResponse.json({
