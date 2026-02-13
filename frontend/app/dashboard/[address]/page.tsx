@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useUser } from "@/lib/hooks/useUser";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ClipboardList,
@@ -12,18 +13,22 @@ import {
   Mail,
   Coins,
   User as UserIcon,
+  Handshake,
 } from "lucide-react";
 import { StatCard } from "@/components/features/common/StatCard";
 import { formatForge } from "@/lib/utils";
 import { CyberCard } from "@/components/ui/CyberCard";
+import { DirectDealModal } from "@/components/features/market/DirectDealModal";
+import { DirectDealCard } from "@/components/features/market/DirectDealCard";
 import {
   getDashboardStats,
   getRequests,
   getProposalsByRequest,
   getUserByAddress,
   getUserById,
+  getDirectRequestsByAddress,
 } from "@/lib/supabase-api";
-import type { TaskRequest, Proposal, User } from "@/lib/types";
+import type { TaskRequest, Proposal, User, DirectRequest } from "@/lib/types";
 
 const statusColors: Record<string, string> = {
   open: "bg-primary/20 text-primary border-primary/30",
@@ -54,9 +59,21 @@ export default function UserDashboardPage() {
   const [recentProposals, setRecentProposals] = useState<ProposalWithUser[]>(
     [],
   );
+  const [directDeals, setDirectDeals] = useState<DirectRequest[]>([]);
+  const [showDirectDeal, setShowDirectDeal] = useState(false);
 
   const isOwnDashboard =
     currentUser?.address?.toLowerCase() === profileAddress?.toLowerCase();
+
+  const loadDirectDeals = useCallback(async () => {
+    if (!profileAddress) return;
+    try {
+      const deals = await getDirectRequestsByAddress(profileAddress);
+      setDirectDeals(deals);
+    } catch {
+      /* ignore */
+    }
+  }, [profileAddress]);
 
   useEffect(() => {
     async function load() {
@@ -94,7 +111,8 @@ export default function UserDashboardPage() {
       setRecentProposals(allProposals.slice(0, 8));
     }
     load();
-  }, [profileAddress]);
+    loadDirectDeals();
+  }, [profileAddress, loadDirectDeals]);
 
   if (notFound) {
     return (
@@ -141,7 +159,7 @@ export default function UserDashboardPage() {
             {profileUser.name?.charAt(0) ?? "?"}
           </AvatarFallback>
         </Avatar>
-        <div>
+        <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="font-heading text-2xl font-bold">
               {profileUser.name}
@@ -159,7 +177,30 @@ export default function UserDashboardPage() {
             {profileUser.address.slice(0, 6)}...{profileUser.address.slice(-4)}
           </p>
         </div>
+
+        {/* Direct Deal Button — shown on other users' dashboards */}
+        {!isOwnDashboard && currentUser?.address && (
+          <Button
+            variant="outline"
+            className="border-accent/30 text-accent hover:bg-accent/10"
+            onClick={() => setShowDirectDeal(true)}
+          >
+            <Handshake className="w-4 h-4 mr-2" />
+            Request Direct Deal
+          </Button>
+        )}
       </div>
+
+      {/* Direct Deal Modal */}
+      {currentUser?.address && (
+        <DirectDealModal
+          open={showDirectDeal}
+          onOpenChange={setShowDirectDeal}
+          agentAddress={profileUser.address}
+          agentName={profileUser.name}
+          clientAddress={currentUser.address}
+        />
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -283,6 +324,36 @@ export default function UserDashboardPage() {
           </div>
         </CyberCard>
       </div>
+
+      {/* Direct Deals Section */}
+      {(isOwnDashboard || directDeals.length > 0) && (
+        <div className="mt-6">
+          <CyberCard dots className="p-6">
+            <h2 className="font-heading text-lg font-semibold mb-4 relative z-1 flex items-center gap-2">
+              <Handshake className="w-5 h-5 text-accent" />
+              Direct Deals
+            </h2>
+            <div className="relative z-1">
+              {directDeals.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {directDeals.map((deal) => (
+                    <DirectDealCard
+                      key={deal.id}
+                      deal={deal}
+                      currentAddress={currentUser?.address ?? profileAddress}
+                      onUpdate={loadDirectDeals}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No direct deals yet.
+                </p>
+              )}
+            </div>
+          </CyberCard>
+        </div>
+      )}
     </div>
   );
 }
