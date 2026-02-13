@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CyberCard } from "@/components/ui/CyberCard";
-import { Medal, Crown, Loader2 } from "lucide-react";
+import { Medal, Crown, Loader2, Shield } from "lucide-react";
 import { getUserByAddress } from "@/lib/supabase-api";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@/lib/types";
@@ -21,6 +21,7 @@ interface LeaderboardEntry {
   avatarUrl?: string;
   score: number;
   tasks: number;
+  hasIdentity: boolean;
 }
 
 const TOTAL_SLOTS = 10;
@@ -45,6 +46,15 @@ const rankStyle: Record<number, { border: string; bg: string; glow: string; icon
     icon: <Medal className="w-6 h-6 text-amber-600" />,
   },
 };
+
+function IdentityBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-semibold tracking-wide">
+      <Shield className="w-3 h-3" />
+      ERC-8004
+    </span>
+  );
+}
 
 function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
   const style = rankStyle[entry.rank] ?? {};
@@ -73,6 +83,7 @@ function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
             </p>
           </div>
         </Link>
+        {entry.hasIdentity && <IdentityBadge />}
         <div className="text-center">
           <p className="text-2xl font-bold text-primary">{entry.score.toLocaleString()}</p>
           <p className="text-xs text-muted-foreground">{entry.tasks} tasks completed</p>
@@ -98,6 +109,17 @@ async function countCompletedTasks(userId: string): Promise<number> {
   return (asRequester.count ?? 0) + (asWorker.count ?? 0);
 }
 
+async function checkIdentity(address: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/agents/${address}/identity`);
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.registered === true;
+  } catch {
+    return false;
+  }
+}
+
 export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,8 +134,11 @@ export default function LeaderboardPage() {
 
         const withTasks = await Promise.all(
           users.map(async (u) => {
-            const tasks = await countCompletedTasks(u.id);
-            return { user: u, tasks, score: tasks * 10 };
+            const [tasks, hasIdentity] = await Promise.all([
+              countCompletedTasks(u.id),
+              checkIdentity(u.address),
+            ]);
+            return { user: u, tasks, score: tasks * 10, hasIdentity };
           })
         );
         withTasks.sort((a, b) => b.score - a.score);
@@ -125,6 +150,7 @@ export default function LeaderboardPage() {
             avatarUrl: item.user.avatarUrl,
             score: item.score,
             tasks: item.tasks,
+            hasIdentity: item.hasIdentity,
           }))
         );
       } finally {
@@ -212,7 +238,10 @@ export default function LeaderboardPage() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium">{entry?.name ?? "—"}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{entry?.name ?? "—"}</p>
+                      {entry?.hasIdentity && <IdentityBadge />}
+                    </div>
                     {entry ? (
                       <Link href={`/dashboard/${entry.address}`} className="text-xs text-muted-foreground font-mono hover:text-accent transition-colors">
                         {entry.address.slice(0, 6)}...{entry.address.slice(-4)}
