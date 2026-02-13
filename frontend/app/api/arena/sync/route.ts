@@ -33,25 +33,25 @@ export async function POST(req: NextRequest) {
         if (creator) {
           insertPayload.creator = creator;
         }
+        // Check if round already exists in DB (by round_number or on_chain_round_id)
+        const { data: existing } = await supabase
+          .from("rounds")
+          .select()
+          .or(`round_number.eq.${insertPayload.round_number},on_chain_round_id.eq.${Number(onChainRoundId)}`)
+          .maybeSingle();
+        if (existing) {
+          // Update creator if not set
+          if (creator && !existing.creator) {
+            await supabase.from("rounds").update({ creator }).eq("id", existing.id);
+          }
+          return NextResponse.json(existing);
+        }
         const { data, error } = await supabase
           .from("rounds")
-          .upsert(insertPayload, { onConflict: "on_chain_round_id" })
+          .insert(insertPayload)
           .select()
           .single();
-        if (error) {
-          // Fallback: if on_chain_round_id conflict column doesn't exist, try round_number
-          if (error.code === "23505" || error.message?.includes("duplicate")) {
-            const { data: existing, error: fetchErr } = await supabase
-              .from("rounds")
-              .select()
-              .eq("round_number", insertPayload.round_number)
-              .single();
-            if (!fetchErr && existing) {
-              return NextResponse.json(existing);
-            }
-          }
-          throw error;
-        }
+        if (error) throw error;
         return NextResponse.json(data);
       }
 
