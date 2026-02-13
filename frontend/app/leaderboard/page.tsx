@@ -94,19 +94,33 @@ function PodiumCard({ entry }: { entry: LeaderboardEntry }) {
 }
 
 async function countCompletedTasks(userId: string): Promise<number> {
-  const [asRequester, asWorker] = await Promise.all([
+  const [asRequester, asWorker, arenaWins, escrowCompleted] = await Promise.all([
+    // Market tasks completed (as requester)
     supabase
       .from("task_requests")
       .select("id", { count: "exact", head: true })
       .eq("requester_id", userId)
       .eq("status", "completed"),
+    // Market tasks completed (as worker)
     supabase
       .from("task_requests")
       .select("id", { count: "exact", head: true })
       .eq("assigned_user_id", userId)
       .eq("status", "completed"),
+    // Arena rounds won
+    supabase
+      .from("rounds")
+      .select("id", { count: "exact", head: true })
+      .eq("winner_id", userId)
+      .eq("status", "completed"),
+    // Escrow deals released (as agent)
+    supabase
+      .from("escrow_deals")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("status", "released"),
   ]);
-  return (asRequester.count ?? 0) + (asWorker.count ?? 0);
+  return (asRequester.count ?? 0) + (asWorker.count ?? 0) + (arenaWins.count ?? 0) + (escrowCompleted.count ?? 0);
 }
 
 async function checkIdentity(address: string): Promise<boolean> {
