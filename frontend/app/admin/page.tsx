@@ -92,12 +92,12 @@ export default function AdminPage() {
     address: CONTRACT_ADDRESSES.FORGE_TOKEN,
     abi: Erc20Abi,
     functionName: "allowance",
-    args: address ? [address, CONTRACT_ADDRESSES.ARENA] : undefined,
+    args: address ? [address, CONTRACT_ADDRESSES.ARENA_V2] : undefined,
   });
 
   // Read on-chain roundCount
   const { refetch: refetchRoundCount } = useReadContract({
-    address: CONTRACT_ADDRESSES.ARENA,
+    address: CONTRACT_ADDRESSES.ARENA_V2,
     abi: ArenaAbi,
     functionName: "roundCount",
   });
@@ -123,7 +123,7 @@ export default function AdminPage() {
       address: CONTRACT_ADDRESSES.FORGE_TOKEN,
       abi: Erc20Abi,
       functionName: "approve",
-      args: [CONTRACT_ADDRESSES.ARENA, prizeWei],
+      args: [CONTRACT_ADDRESSES.ARENA_V2, prizeWei],
     });
   }
 

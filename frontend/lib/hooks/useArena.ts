@@ -6,7 +6,7 @@ import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 
 const arenaConfig = {
-  address: CONTRACT_ADDRESSES.ARENA,
+  address: CONTRACT_ADDRESSES.ARENA_V2,
   abi: ArenaAbi,
 } as const;
 

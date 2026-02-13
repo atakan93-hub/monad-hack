@@ -31,7 +31,7 @@ import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
 import { formatForge } from "@/lib/utils";
 import type { Round, Topic, ArenaEntry, RoundStatus } from "@/lib/types";
 
-const isOnChain = CONTRACT_ADDRESSES.ARENA !== "0x0000000000000000000000000000000000000000";
+const isOnChain = CONTRACT_ADDRESSES.ARENA_V2 !== "0x0000000000000000000000000000000000000000";
 
 const tabs: { value: RoundStatus | "all"; label: string }[] = [
   { value: "all", label: "All" },
@@ -160,7 +160,7 @@ export default function ArenaPage() {
       try {
         const prize = parseUnits(newPrize || "0", 18);
         if (prize > 0n) {
-          await approveAsync(CONTRACT_ADDRESSES.ARENA, prize);
+          await approveAsync(CONTRACT_ADDRESSES.ARENA_V2, prize);
         }
         const receipt = await createRoundHook.writeAsync(prize);
 
