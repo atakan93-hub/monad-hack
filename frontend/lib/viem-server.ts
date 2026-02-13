@@ -22,7 +22,7 @@ const client = createPublicClient({
   transport: http(),
 });
 
-const arenaAddress = CONTRACT_ADDRESSES.ARENA as `0x${string}`;
+const arenaAddress = CONTRACT_ADDRESSES.ARENA_V2 as `0x${string}`;
 const escrowAddress = CONTRACT_ADDRESSES.ESCROW as `0x${string}`;
 
 /** Verify we're talking to the right chain */
