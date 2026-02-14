@@ -322,6 +322,7 @@ export default function ArenaPage() {
             setTopics(t);
           }
           await refetchVoted();
+          await refetchVoteWeight();
           toast.success("Vote submitted!");
         } catch (err) { toast.error(`Vote failed: ${err instanceof Error ? err.message : "Transaction rejected"}`); } finally {
           setIsVoteSyncing(false);
@@ -484,12 +485,12 @@ export default function ArenaPage() {
   // On-chain reads for advance conditions
   const onChainRoundIdBig = selectedRound?.onChainRoundId != null ? BigInt(selectedRound.onChainRoundId) : 0n;
 
-  const { data: totalVoteWeight } = useReadContract({
+  const { data: totalVoteWeight, refetch: refetchVoteWeight } = useReadContract({
     address: CONTRACT_ADDRESSES.ARENA_V2,
     abi: ArenaAbi,
     functionName: "totalVoteWeight",
     args: [onChainRoundIdBig],
-    query: { enabled: selectedRound?.status === "voting" && onChainRoundIdBig > 0n },
+    query: { enabled: selectedRound?.status === "voting" && onChainRoundIdBig > 0n, refetchInterval: 5000 },
   });
 
   const { data: minVoteWeight } = useReadContract({
