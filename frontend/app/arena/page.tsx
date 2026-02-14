@@ -26,6 +26,7 @@ import {
 } from "@/lib/supabase-api";
 import { useVoteForTopic, useProposeTopic, useSubmitEntry, useHasVoted, useCreateRound, useAdvanceRound, useSelectWinner } from "@/lib/hooks/useArena";
 import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
+import { useReadContract } from "wagmi";
 import { useForgeBalance, useForgeApprove } from "@/lib/hooks/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import { formatUnits, decodeEventLog, parseUnits } from "viem";
@@ -474,6 +475,63 @@ export default function ArenaPage() {
     (t) => t.id === selectedRound?.selectedTopicId
   );
 
+  // On-chain reads for advance conditions
+  const onChainRoundIdBig = selectedRound?.onChainRoundId != null ? BigInt(selectedRound.onChainRoundId) : 0n;
+
+  const { data: totalVoteWeight } = useReadContract({
+    address: CONTRACT_ADDRESSES.ARENA_V2,
+    abi: ArenaAbi,
+    functionName: "totalVoteWeight",
+    args: [onChainRoundIdBig],
+    query: { enabled: selectedRound?.status === "voting" && onChainRoundIdBig > 0n },
+  });
+
+  const { data: minVoteWeight } = useReadContract({
+    address: CONTRACT_ADDRESSES.ARENA_V2,
+    abi: ArenaAbi,
+    functionName: "minVoteWeightToAdvance",
+    query: { enabled: selectedRound?.status === "voting" },
+  });
+
+  const { data: minTopics } = useReadContract({
+    address: CONTRACT_ADDRESSES.ARENA_V2,
+    abi: ArenaAbi,
+    functionName: "minTopicsToAdvance",
+    query: { enabled: selectedRound?.status === "proposing" },
+  });
+
+  // Determine if advance conditions are met
+  const advanceConditionMet = (() => {
+    if (!selectedRound) return false;
+    switch (selectedRound.status) {
+      case "proposing":
+        return topics.length >= Number(minTopics ?? 3);
+      case "voting":
+        return (totalVoteWeight ?? 0n) >= (minVoteWeight ?? BigInt(100e18));
+      case "active":
+        return entries.length >= 1;
+      default:
+        return false;
+    }
+  })();
+
+  const advanceHint = (() => {
+    if (!selectedRound) return "";
+    switch (selectedRound.status) {
+      case "proposing":
+        return `${topics.length}/${Number(minTopics ?? 3)} topics`;
+      case "voting": {
+        const current = totalVoteWeight ? Number(formatUnits(totalVoteWeight as bigint, 18)) : 0;
+        const required = minVoteWeight ? Number(formatUnits(minVoteWeight as bigint, 18)) : 100;
+        return `${current.toFixed(0)}/${required.toFixed(0)} FORGE vote weight`;
+      }
+      case "active":
+        return `${entries.length}/1 entries`;
+      default:
+        return "";
+    }
+  })();
+
   // Determine if advance button should be shown
   const canAdvance =
     isConnected &&
@@ -601,13 +659,13 @@ export default function ArenaPage() {
 
               {/* Advance Round Button */}
               {canAdvance && (
-                <div className="mt-2">
+                <div className="mt-2 flex items-center gap-3">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="border-primary/30 text-primary"
+                    className={advanceConditionMet ? "border-primary/30 text-primary" : "border-muted/30 text-muted-foreground"}
                     onClick={handleAdvanceRound}
-                    disabled={isActionLoading || advanceRoundHook.isPending || advanceRoundHook.isConfirming}
+                    disabled={!advanceConditionMet || isActionLoading || advanceRoundHook.isPending || advanceRoundHook.isConfirming}
                   >
                     {advanceRoundHook.isPending
                       ? "Sign tx..."
@@ -617,6 +675,9 @@ export default function ArenaPage() {
                           ? "Processing..."
                           : `Advance to ${selectedRound.status === "proposing" ? "Voting" : selectedRound.status === "voting" ? "Active" : "Judging"}`}
                   </Button>
+                  <span className={`text-xs ${advanceConditionMet ? "text-green-400" : "text-muted-foreground"}`}>
+                    {advanceHint}
+                  </span>
                 </div>
               )}
 
