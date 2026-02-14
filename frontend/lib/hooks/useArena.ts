@@ -70,6 +70,15 @@ export function useSubmitEntry() {
 
 // === Read ===
 
+export function useWinningTopicProposer(roundId: bigint | undefined) {
+  return useReadContract({
+    ...arenaConfig,
+    functionName: "winningTopicProposer",
+    args: roundId != null ? [roundId] : undefined,
+    query: { enabled: roundId != null },
+  });
+}
+
 export function useHasVoted(roundId: bigint) {
   const { address } = useAccount();
   return useReadContract({

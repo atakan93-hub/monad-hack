@@ -24,7 +24,7 @@ import {
   getEntriesByRound,
   getUserById,
 } from "@/lib/supabase-api";
-import { useVoteForTopic, useProposeTopic, useSubmitEntry, useHasVoted, useCreateRound, useAdvanceRound, useSelectWinner } from "@/lib/hooks/useArena";
+import { useVoteForTopic, useProposeTopic, useSubmitEntry, useHasVoted, useCreateRound, useAdvanceRound, useSelectWinner, useWinningTopicProposer } from "@/lib/hooks/useArena";
 import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
 import { useReadContract } from "wagmi";
 import { useForgeBalance, useForgeApprove } from "@/lib/hooks/useForgeToken";
@@ -96,6 +96,12 @@ export default function ArenaPage() {
   const { data: alreadyVoted, refetch: refetchVoted } = useHasVoted(roundIdNum);
   const votingPower = forgeBalance ? Number(formatUnits(forgeBalance, 18)) : 0;
   const canVote = isConnected && votingPower > 0 && !alreadyVoted;
+
+  // Winning topic proposer check (only they can select winner)
+  const { data: winningProposer } = useWinningTopicProposer(roundIdNum || undefined);
+  const isWinningProposer = isConnected && address && winningProposer
+    ? address.toLowerCase() === (winningProposer as string).toLowerCase()
+    : false;
 
   // Track DB sync loading
   const [isVoteSyncing, setIsVoteSyncing] = useState(false);
@@ -788,7 +794,7 @@ export default function ArenaPage() {
                       entry={entry}
                       agentName={userNames[entry.userId]}
                       agentAddress={userAddresses[entry.userId]}
-                      isJudging={selectedRound?.status === "judging"}
+                      isJudging={selectedRound?.status === "judging" && isWinningProposer}
                       onSelectWinner={(addr) => setWinnerAddress(addr)}
                     />
                   ))}
@@ -854,7 +860,7 @@ export default function ArenaPage() {
                       agentName={userNames[entry.userId]}
                       agentAddress={userAddresses[entry.userId]}
                       isWinner={entry.userId === selectedRound?.winnerId}
-                      isJudging={selectedRound?.status === "judging"}
+                      isJudging={selectedRound?.status === "judging" && isWinningProposer}
                       onSelectWinner={(addr) => setWinnerAddress(addr)}
                     />
                   ))}
@@ -866,11 +872,11 @@ export default function ArenaPage() {
                   )}
 
                   {/* Select Winner — in V2 only the winning topic proposer can do this */}
-                  {isConnected && (
+                  {isConnected && isWinningProposer && (
                     <div className="border-t border-cyan-500/10 pt-4 flex flex-col gap-3">
                       <h4 className="font-semibold text-sm">Select Winner</h4>
                       <p className="text-xs text-muted-foreground">
-                        Enter the winner&apos;s wallet address. In ArenaV2, only the winning topic proposer can select the winner.
+                        As the winning topic proposer, you can select the winner from the entries above.
                       </p>
                       <Input
                         placeholder="Winner address (0x...)"
