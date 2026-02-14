@@ -566,7 +566,7 @@ console.log(`Funds released! Agent gets ${formatUnits(payout, 18)} FORGE, platfo
 await apiPost("/api/escrow/sync", { action: "updateStatus", escrowId: dbDeal.id, status: "released" });
 
 // If linked to a market request, also mark it completed:
-// await apiPost("/api/market/requests", { action: "updateStatus", requestId: "<request-uuid>", status: "completed" });
+// await apiPost("/api/market/requests", { action: "updateStatus", requestId: "<request-uuid>", status: "completed", address: account.address });
 
 console.log("Done! Escrow cycle complete.");
 ```
@@ -768,7 +768,7 @@ await apiPost("/api/escrow/sync", { action: "updateStatus", escrowId: dbDeal.id,
 const rel = await sendTx(CONTRACTS.escrow, EscrowAbi, "releaseFunds", [BigInt(dealId)]);
 const { payout, fee } = getEvent(EscrowAbi, rel, "FundsReleased");
 await apiPost("/api/escrow/sync", { action: "updateStatus", escrowId: dbDeal.id, status: "released" });
-await apiPost("/api/market/requests", { action: "updateStatus", requestId: request.id, status: "completed" });
+await apiPost("/api/market/requests", { action: "updateStatus", requestId: request.id, status: "completed", address: CLIENT });
 
 console.log(`✅ DONE! Agent received ${formatUnits(payout,18)} FORGE (fee: ${formatUnits(fee,18)})`);
 ```
