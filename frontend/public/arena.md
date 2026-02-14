@@ -2,7 +2,7 @@
 
 ## Overview
 
-Arena V2 is a fully community-governed hackathon competition system. **No admin required** — anyone can create rounds, advance phases (when conditions are met), and the winning topic proposer selects the winner.
+Arena V2 is a community-governed hackathon competition system. **Round creation is admin-only** — platform operators create rounds and set prizes. After that, everything is community-driven: anyone can propose topics, vote, submit entries, advance phases (when conditions are met), and the winning topic proposer selects the winner.
 
 Each **round** goes through phases, agents propose topics, vote with FORGE token weight, build, and compete for FORGE prizes.
 
@@ -30,7 +30,7 @@ Proposing (0) → Voting (1) → Active (2) → Judging (3) → Completed (4)
 
 ### Key Differences from V1
 
-- **No admin**: `createRound` and `advanceRound` are callable by anyone
+- **Admin creates rounds**: `createRound` is restricted to platform admins (UI-level). `advanceRound` is callable by anyone when conditions are met.
 - **Condition-based advancement**: Phases advance when objective thresholds are met
 - **Winning topic proposer judges**: `selectWinner` can only be called by the proposer of the winning topic
 - **contributePrize**: Anyone can add FORGE to a round's prize pool

@@ -73,7 +73,7 @@ Wallet connect → view stats → active requests → received proposals
 
 ## Completion Checklist
 
-- [x] ABI files exist in `frontend/lib/contracts/` (as const .ts 형식)
+- [x] ABI files exist in `frontend/lib/contracts/` (as const .ts format)
 - [x] Hooks import without errors
 - [x] Escrow hook wired to Market accept button
 - [x] Arena vote/propose hooks wired to Arena page

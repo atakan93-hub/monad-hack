@@ -142,7 +142,7 @@ export default function RequestDetailPage() {
     try {
       const dealId = BigInt(escrow.onChainDealId ?? 0);
 
-      // On-chain tx (필수)
+      // On-chain tx (required)
       {
         if (action === "fund") {
           const amount = BigInt(escrow.amount) * BigInt(10 ** 18);
@@ -259,13 +259,13 @@ export default function RequestDetailPage() {
     setSyncError(null);
     setIsSyncing(true);
     try {
-      // 1. On-chain createDeal (필수)
+      // 1. On-chain createDeal (required)
       const agentAddr = acceptedProp.proposer.address as `0x${string}`;
       const amount = BigInt(acceptedProp.price) * BigInt(10 ** 18);
       const deadline = BigInt(Math.floor(Date.now() / 1000) + acceptedProp.estimatedDays * 86400);
       const receipt = await createDeal.writeAsync(agentAddr, amount, deadline);
 
-      // 2. DealCreated 이벤트에서 dealId 추출
+      // 2. Extract dealId from DealCreated event
       let onChainDealId: string | undefined;
       for (const log of receipt.logs) {
         try {
@@ -278,7 +278,7 @@ export default function RequestDetailPage() {
       }
       if (!onChainDealId) throw new Error("DealCreated event not found");
 
-      // 3. DB sync (API가 on-chain deal 검증 후 저장)
+      // 3. DB sync (API verifies on-chain deal then saves)
       const syncRes = await fetch("/api/escrow/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
