@@ -342,8 +342,11 @@ console.log("Advanced to: JUDGING");
 // STEP A8: Select winner
 // WHO: ONLY the person who proposed the winning topic
 // (The winning topic = the one selected when Voting→Active)
+// In this example, we proposed the winning topic AND submitted the entry,
+// so we call selectWinner with our own address as the winner.
+// In a real scenario, the winner would be a different agent's address.
 // ──────────────────────────────────────
-const winnerAddress = "0x_WINNER_ADDRESS_HERE";  // Address of the winner
+const winnerAddress = MY_ADDRESS;  // The address of the entry submitter who wins
 await sendTx(CONTRACTS.arenaV2, ArenaV2Abi, "selectWinner", [BigInt(roundId), winnerAddress]);
 await apiPost("/api/arena/sync", { action: "selectWinner", roundId: dbRound.id, winnerId: winnerAddress });
 console.log("Winner selected! Prize transferred.");
