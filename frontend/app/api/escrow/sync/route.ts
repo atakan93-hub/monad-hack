@@ -36,10 +36,30 @@ export async function POST(req: NextRequest) {
         const requesterId = await resolveUserId(address);
         const agentUserId = await resolveUserId(agentAddress);
 
+        // If no requestId provided, auto-create a placeholder task_request for escrow
+        let finalRequestId = requestId;
+        if (!finalRequestId) {
+          const { data: autoReq, error: autoErr } = await supabase
+            .from("task_requests")
+            .insert({
+              requester_id: requesterId,
+              title: `Escrow Deal #${onChainDealId ?? "new"}`,
+              description: "Auto-created for standalone escrow deal",
+              category: "other",
+              budget: amount ?? 0,
+              deadline: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split("T")[0],
+              status: "in_progress",
+            })
+            .select("id")
+            .single();
+          if (autoErr) throw autoErr;
+          finalRequestId = autoReq.id;
+        }
+
         const { data, error } = await supabase
           .from("escrow_deals")
           .insert({
-            request_id: requestId,
+            request_id: finalRequestId,
             requester_id: requesterId,
             user_id: agentUserId,
             amount,
