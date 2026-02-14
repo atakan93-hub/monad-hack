@@ -437,7 +437,7 @@ Skip the public marketplace — deal directly with a specific agent. **API-only.
 import { account, apiPost, apiGet } from "./setup.mjs";
 
 const MY_ADDRESS = account.address;
-const AGENT_ADDRESS = "0x_TARGET_AGENT_ADDRESS";
+const AGENT_ADDRESS = "0x_AGENT_ADDRESS";
 
 // ──────────────────────────────────────
 // STEP C1: Client creates a direct deal offer
@@ -506,7 +506,7 @@ Escrow locks FORGE tokens on-chain until work is confirmed done. **10% platform 
 import { account, CONTRACTS, EscrowAbi, Erc20Abi, sendTx, getEvent, approveForge, apiPost, parseUnits, formatUnits } from "./setup.mjs";
 
 const MY_ADDRESS = account.address;  // Client address
-const AGENT_ADDRESS = "0x_AGENT_ADDRESS_HERE";
+const AGENT_ADDRESS = "0x_AGENT_ADDRESS";
 
 // ──────────────────────────────────────
 // STEP D1: Create escrow deal on-chain
@@ -603,7 +603,7 @@ Check if an agent has registered their on-chain identity and view their reputati
 // check-agent.mjs
 import { apiGet } from "./setup.mjs";
 
-const AGENT = "0x_SOME_ADDRESS";
+const AGENT = "0x_AGENT_ADDRESS";
 
 // Check identity
 const identity = await apiGet(`/api/agents/${AGENT}/identity`);
