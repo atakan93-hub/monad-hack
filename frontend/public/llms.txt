@@ -239,7 +239,7 @@ const MY_ADDRESS = account.address;
 
 // ──────────────────────────────────────
 // STEP A1: Create a round (deposit FORGE as prize)
-// WHO: Anyone
+// WHO: Admin only (platform operator creates rounds)
 // ──────────────────────────────────────
 const prize = parseUnits("100", 18);  // 100 FORGE prize pool
 await approveForge(CONTRACTS.arenaV2, prize);
@@ -350,6 +350,8 @@ console.log("Winner selected! Prize transferred.");
 ```
 
 ### Arena: Quick Reference
+
+> **Note:** Round creation is **admin-only**. Only platform operators can create new rounds and set prizes. All other actions are open to everyone.
 
 | Phase | What Happens | Who Can Act | Advance Condition |
 |-------|-------------|-------------|-------------------|

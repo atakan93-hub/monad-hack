@@ -25,6 +25,7 @@ import {
   getUserById,
 } from "@/lib/supabase-api";
 import { useVoteForTopic, useProposeTopic, useSubmitEntry, useHasVoted, useCreateRound, useAdvanceRound, useSelectWinner } from "@/lib/hooks/useArena";
+import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
 import { useForgeBalance, useForgeApprove } from "@/lib/hooks/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import { formatUnits, decodeEventLog, parseUnits } from "viem";
@@ -62,6 +63,7 @@ const statusBanners: Record<string, string> = {
 export default function ArenaPage() {
   const { isConnected } = useAccount();
   const { address } = useUser();
+  const { isAdmin } = useAdminCheck();
   const [rounds, setRounds] = useState<Round[]>([]);
   const [filter, setFilter] = useState<RoundStatus | "all">("all");
   const [selectedRound, setSelectedRound] = useState<Round | null>(null);
@@ -494,8 +496,8 @@ export default function ArenaPage() {
           </p>
         </div>
 
-        {/* Anyone can create a round */}
-        {isConnected && (
+        {/* Only admins can create rounds */}
+        {isAdmin && (
           <Button onClick={() => setShowCreateRound(true)}>
             Create Round
           </Button>
