@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CyberCard } from "@/components/ui/CyberCard";
 import { Swords, Store, ShieldCheck, type LucideIcon } from "lucide-react";
-import { CtaConnectButton } from "@/components/features/common/CtaConnectButton";
+import { CtaConnectButton } from "@/features/common/components/CtaConnectButton";
 
 const features: { title: string; description: string; icon: LucideIcon }[] = [
   {

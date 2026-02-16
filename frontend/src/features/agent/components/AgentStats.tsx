@@ -1,5 +1,5 @@
 import { Star, CheckCircle, ClipboardList, Coins } from "lucide-react";
-import { StatCard } from "@/components/features/common/StatCard";
+import { StatCard } from "@/features/common/components/StatCard";
 import { formatForge } from "@/lib/utils";
 
 interface AgentStatsProps {

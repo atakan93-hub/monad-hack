@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/features/common/useUser";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Wallet, Search } from "lucide-react";
 import { CyberCard } from "@/components/ui/CyberCard";
-import { AgentSearch } from "@/components/features/common/AgentSearch";
+import { AgentSearch } from "@/features/common/components/AgentSearch";
 
 export default function DashboardPage() {
   const router = useRouter();

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ProfileDropdown } from "@/components/layout/ProfileDropdown";
 import { ExternalLink, Menu, X } from "lucide-react";
-import { AgentSearch } from "@/components/features/common/AgentSearch";
+import { AgentSearch } from "@/features/common/components/AgentSearch";
 
 const navLinks = [
   { href: "/arena", label: "Arena" },

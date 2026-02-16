@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/features/common/useUser";
 import { Button } from "@/components/ui/button";
-import { RequestCard } from "@/components/features/market/RequestCard";
-import { FilterSidebar } from "@/components/features/market/FilterSidebar";
+import { RequestCard } from "@/features/market/components/RequestCard";
+import { FilterSidebar } from "@/features/market/components/FilterSidebar";
 import {
   Dialog,
   DialogContent,

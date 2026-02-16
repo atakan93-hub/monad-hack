@@ -1,7 +1,7 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/features/common/useUser";
 import { ShieldCheck } from "lucide-react";
 
 function shortenAddress(address: string) {

@@ -4,22 +4,22 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/features/common/useUser";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatForge } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CyberCard } from "@/components/ui/CyberCard";
-import { ProposalForm } from "@/components/features/market/ProposalForm";
+import { ProposalForm } from "@/features/market/components/ProposalForm";
 import {
   getRequestById,
   getProposalsByRequest,
   getUserById,
   getEscrowByRequestId,
 } from "@/lib/supabase-api";
-import { useCreateDeal, useFundDeal, useCompleteDeal, useReleaseFunds, useDisputeDeal, useRefundDeal } from "@/lib/hooks/useEscrow";
-import { useForgeApprove } from "@/lib/hooks/useForgeToken";
+import { useCreateDeal, useFundDeal, useCompleteDeal, useReleaseFunds, useDisputeDeal, useRefundDeal } from "@/features/escrow/useEscrow";
+import { useForgeApprove } from "@/features/common/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import { EscrowAbi } from "@/lib/contracts/EscrowAbi";
 import { decodeEventLog } from "viem";

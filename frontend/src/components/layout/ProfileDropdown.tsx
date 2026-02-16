@@ -2,7 +2,7 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useDisconnect } from "wagmi";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/features/common/useUser";
 import {
   DropdownMenu,
   DropdownMenuContent,

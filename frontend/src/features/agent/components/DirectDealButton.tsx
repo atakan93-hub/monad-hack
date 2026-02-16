@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Handshake } from "lucide-react";
-import { DirectDealModal } from "@/components/features/market/DirectDealModal";
+import { DirectDealModal } from "@/features/market/components/DirectDealModal";
 
 interface DirectDealButtonProps {
   agentAddress: string;

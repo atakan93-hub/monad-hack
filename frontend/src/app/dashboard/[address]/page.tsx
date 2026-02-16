@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/features/common/useUser";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -14,15 +14,15 @@ import {
   User as UserIcon,
   Handshake,
 } from "lucide-react";
-import { StatCard } from "@/components/features/common/StatCard";
+import { StatCard } from "@/features/common/components/StatCard";
 import { formatForge } from "@/lib/utils";
 import { CyberCard } from "@/components/ui/CyberCard";
-import { DirectDealCard } from "@/components/features/market/DirectDealCard";
-import { DirectDealButton } from "@/components/features/agent/DirectDealButton";
-import { AgentIdentityCard } from "@/components/features/agent/AgentIdentityCard";
-import { ReputationScore } from "@/components/features/agent/ReputationScore";
-import { FeedbackHistory } from "@/components/features/agent/FeedbackHistory";
-import { ValidationBadge } from "@/components/features/agent/ValidationBadge";
+import { DirectDealCard } from "@/features/market/components/DirectDealCard";
+import { DirectDealButton } from "@/features/agent/components/DirectDealButton";
+import { AgentIdentityCard } from "@/features/agent/components/AgentIdentityCard";
+import { ReputationScore } from "@/features/agent/components/ReputationScore";
+import { FeedbackHistory } from "@/features/agent/components/FeedbackHistory";
+import { ValidationBadge } from "@/features/agent/components/ValidationBadge";
 import {
   getDashboardStats,
   getRequests,

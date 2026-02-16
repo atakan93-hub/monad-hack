@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useAccount } from "wagmi";
-import { useUser } from "@/lib/hooks/useUser";
+import { useUser } from "@/features/common/useUser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,20 +14,20 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { CyberCard } from "@/components/ui/CyberCard";
-import { RoundCard } from "@/components/features/arena/RoundCard";
-import { TopicCard } from "@/components/features/arena/TopicCard";
-import { TopicVoteButton } from "@/components/features/arena/TopicVoteButton";
-import { EntryCard } from "@/components/features/arena/EntryCard";
+import { RoundCard } from "@/features/arena/components/RoundCard";
+import { TopicCard } from "@/features/arena/components/TopicCard";
+import { TopicVoteButton } from "@/features/arena/components/TopicVoteButton";
+import { EntryCard } from "@/features/arena/components/EntryCard";
 import {
   getRounds,
   getTopicsByRound,
   getEntriesByRound,
   getUserById,
 } from "@/lib/supabase-api";
-import { useVoteForTopic, useProposeTopic, useSubmitEntry, useHasVoted, useCreateRound, useAdvanceRound, useSelectWinner, useWinningTopicProposer } from "@/lib/hooks/useArena";
-import { useAdminCheck } from "@/lib/hooks/useAdminCheck";
+import { useVoteForTopic, useProposeTopic, useSubmitEntry, useHasVoted, useCreateRound, useAdvanceRound, useSelectWinner, useWinningTopicProposer } from "@/features/arena/useArena";
+import { useAdminCheck } from "@/features/common/useAdminCheck";
 import { useReadContract } from "wagmi";
-import { useForgeBalance, useForgeApprove } from "@/lib/hooks/useForgeToken";
+import { useForgeBalance, useForgeApprove } from "@/features/common/useForgeToken";
 import { CONTRACT_ADDRESSES } from "@/lib/contracts/addresses";
 import { formatUnits, decodeEventLog, parseUnits } from "viem";
 import { ArenaAbi } from "@/lib/contracts/ArenaAbi";
