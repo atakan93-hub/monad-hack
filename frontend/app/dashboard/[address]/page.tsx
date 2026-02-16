@@ -300,7 +300,7 @@ export default function UserDashboardPage() {
                   <Link key={req.id} href={`/market/${req.id}`}>
                     <div
                       className="p-4 border border-cyan-500/10 bg-white/[0.02] flex items-center justify-between
-                                    hover:border-cyan-500/25 hover:bg-white/[0.04] hover:shadow-[0_0_12px_rgba(6,182,212,0.06)] transition-all duration-300"
+                                    hover:border-cyan-500/25 hover:bg-white/[0.04] hover:shadow-[0_0_12px_rgba(6,182,212,0.06)] transition-[border-color,background-color,box-shadow] duration-300"
                     >
                       <div>
                         <p className="font-medium text-sm">{req.title}</p>
@@ -339,7 +339,7 @@ export default function UserDashboardPage() {
                   <div
                     key={prop.id}
                     className="p-4 border border-cyan-500/10 bg-white/2
-                                    hover:border-cyan-500/25 hover:bg-white/[0.04] transition-all duration-300"
+                                    hover:border-cyan-500/25 hover:bg-white/[0.04] transition-[border-color,background-color,box-shadow] duration-300"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">

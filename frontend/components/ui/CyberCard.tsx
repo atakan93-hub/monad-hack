@@ -15,8 +15,9 @@ export function CyberCard({
   progressBar = false,
   onClick,
 }: CyberCardProps) {
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className={cn("cyber-frame", className)} onClick={onClick}>
+    <Tag className={cn("cyber-frame text-left w-full", className)} onClick={onClick}>
       <span className="cyber-corner-tl" />
       <span className="cyber-corner-tr" />
       <span className="cyber-corner-bl" />
@@ -33,6 +34,6 @@ export function CyberCard({
       {progressBar && <span className="cyber-progress" />}
 
       {children}
-    </div>
+    </Tag>
   );
 }

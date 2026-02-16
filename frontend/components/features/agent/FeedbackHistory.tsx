@@ -42,7 +42,7 @@ export function FeedbackHistory({ feedback }: FeedbackHistoryProps) {
             <div
               key={`${fb.client}-${fb.feedbackIndex}-${i}`}
               className="p-3 border border-cyan-500/10 bg-white/[0.02] flex items-center gap-3
-                         hover:border-cyan-500/20 transition-all duration-300"
+                         hover:border-cyan-500/20 transition-[border-color,background-color] duration-300"
             >
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                 fb.value >= 0 ? "bg-green-500/10" : "bg-red-500/10"

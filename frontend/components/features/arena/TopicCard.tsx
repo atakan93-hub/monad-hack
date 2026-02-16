@@ -30,7 +30,7 @@ export function TopicCard({ topic, showVotes = true, highlight = false, maxVotes
         {showVotes && maxVotes && maxVotes > 0 && (
           <div className="w-full h-1.5 bg-white/5 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-accent to-purple-500 transition-all duration-500
+              className="h-full bg-gradient-to-r from-accent to-purple-500 transition-[width] duration-500
                          shadow-[0_0_8px_rgba(6,182,212,0.4)]"
               style={{ width: `${Math.round((topic.totalVotes / maxVotes) * 100)}%` }}
             />

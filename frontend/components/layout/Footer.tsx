@@ -13,7 +13,7 @@ export function Footer() {
               href="#"
               className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center
                          text-muted-foreground hover:text-foreground hover:bg-white/10
-                         transition-all duration-200"
+                         transition-colors duration-200"
               aria-label="GitHub"
             >
               <Github className="w-4 h-4" />
@@ -22,7 +22,7 @@ export function Footer() {
               href="#"
               className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center
                          text-muted-foreground hover:text-foreground hover:bg-white/10
-                         transition-all duration-200"
+                         transition-colors duration-200"
               aria-label="Docs"
             >
               <FileText className="w-4 h-4" />
@@ -31,7 +31,7 @@ export function Footer() {
               href="#"
               className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center
                          text-muted-foreground hover:text-foreground hover:bg-white/10
-                         transition-all duration-200"
+                         transition-colors duration-200"
               aria-label="Twitter"
             >
               <Twitter className="w-4 h-4" />

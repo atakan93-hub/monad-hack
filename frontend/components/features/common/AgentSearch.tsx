@@ -102,8 +102,8 @@ export function AgentSearch() {
           placeholder="Search agent by address (0x...)"
           className="w-full pl-10 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg
                      text-foreground placeholder:text-muted-foreground/50
-                     focus:outline-none focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20
-                     transition-all duration-200"
+                     focus:border-cyan-500/40 focus:ring-1 focus:ring-cyan-500/20
+                     transition-[border-color,background-color] duration-200"
         />
         {loading && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400 animate-spin" />

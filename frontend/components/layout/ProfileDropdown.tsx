@@ -65,7 +65,7 @@ export function ProfileDropdown() {
                            border border-cyan-500/40 bg-cyan-500/5
                            hover:bg-cyan-500/10 hover:border-cyan-500/60
                            hover:shadow-[0_0_15px_rgba(6,182,212,0.2)]
-                           transition-all duration-300"
+                           transition-[border-color,box-shadow,background-color] duration-300"
               >
                 <span className="absolute -top-px -left-px w-2 h-2 border-t border-l border-cyan-400" />
                 <span className="absolute -top-px -right-px w-2 h-2 border-t border-r border-cyan-400" />
@@ -97,7 +97,7 @@ export function ProfileDropdown() {
                     <button
                       className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm
                                  glass border border-white/[0.06] hover:border-primary/30
-                                 transition-all duration-200 outline-none"
+                                 transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-amber-500"
                     >
                       <div className="size-6 rounded-full bg-gradient-to-br from-primary/60 to-cyan-400/60 flex items-center justify-center text-[10px] font-bold text-white">
                         {account.address.slice(2, 4).toUpperCase()}

@@ -284,7 +284,7 @@ textarea:focus {
 
 /* === Card Hover Glow === */
 .card-hover-glow {
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 .card-hover-glow:hover {
   border-color: rgba(6, 182, 212, 0.3);
@@ -294,7 +294,7 @@ textarea:focus {
 
 /* === Button Hover Enhancement === */
 .btn-hover-lift {
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease;
 }
 .btn-hover-lift:hover {
   transform: scale(1.02);
@@ -309,7 +309,7 @@ textarea:focus {
   background: linear-gradient(180deg, rgba(6, 182, 212, 0.04) 0%, rgba(8, 10, 18, 0.95) 30%);
   border: 1px solid rgba(6, 182, 212, 0.15);
   box-shadow: 0 0 20px rgba(6, 182, 212, 0.06), inset 0 1px 0 rgba(6, 182, 212, 0.1);
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .cyber-frame:hover {
   border-color: rgba(6, 182, 212, 0.3);
@@ -407,7 +407,7 @@ textarea:focus {
   right: 50%;
   height: 1px;
   background: linear-gradient(90deg, #06B6D4, #F59E0B);
-  transition: all 0.3s ease;
+  transition: left 0.3s ease, right 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
   opacity: 0;
 }
 .cyber-nav-idle:hover {

@@ -16,7 +16,7 @@ export function StatCard({ label, value, icon }: StatCardProps) {
         </div>
         {icon && (
           <div className="w-10 h-10 flex items-center justify-center text-cyan-400/60
-                          transition-all duration-300 group-hover:text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]">
+                          transition-[color,filter] duration-300 group-hover:text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]">
             {icon}
           </div>
         )}

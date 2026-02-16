@@ -19,7 +19,7 @@ export function DirectDealButton({ agentAddress, agentName, clientAddress }: Dir
       <Button
         variant="outline"
         className="border-accent/30 text-accent hover:bg-accent/10 hover:shadow-[0_0_12px_rgba(6,182,212,0.2)]
-                   transition-all duration-300"
+                   transition-[background-color,box-shadow,transform] duration-300"
         onClick={() => setOpen(true)}
       >
         <Handshake className="w-4 h-4 mr-2" />
